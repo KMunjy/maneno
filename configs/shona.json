@@ -1,0 +1,7 @@
+{
+  "language": "Shona",
+  "atomic_graphemes": ["ch", "sh", "sv", "zv", "ng", "mb", "nd", "nj", "ny", "nz", "mh", "pf", "ts", "dz", "vh"],
+  "ignore_casing": true,
+  "strip_diacritics": false,
+  "preserve_marks": []
+}

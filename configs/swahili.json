@@ -1,0 +1,7 @@
+{
+  "language": "Swahili",
+  "atomic_graphemes": ["ng'", "ch", "sh", "gh", "kh", "th", "dh", "ng", "ny", "mb", "nd"],
+  "ignore_casing": true,
+  "strip_diacritics": true,
+  "preserve_marks": ["'"]
+}

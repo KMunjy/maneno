@@ -1,0 +1,8 @@
+{
+  "_status": "deferred-preview — NOT part of MVP1. Click consonants (c/q/x, gc/gq/nx) and trigraphs need validation + tuning before this is puzzle-ready.",
+  "language": "Zulu",
+  "atomic_graphemes": ["ch", "dl", "hl", "kh", "ph", "th", "ts", "bh", "sh", "ng", "ny", "nc", "nq", "nx", "gc", "gq", "gx", "c", "q", "x"],
+  "ignore_casing": true,
+  "strip_diacritics": false,
+  "preserve_marks": []
+}
