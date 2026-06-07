@@ -6,132 +6,364 @@
 <title>Mhanga · Bantu Crossword</title>
 <meta name="description" content="A grapheme-aware crossword puzzle for Bantu languages — digraphs like ng', zv and ch each fill a single cell." />
 <style>
-  :root {
-    --bg: #0b1120;
-    --bg2: #0f1b34;
-    --glass: rgba(255, 255, 255, 0.06);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --ink: #e8eefc;
-    --muted: #93a1bf;
-    --accent: #5eead4;
-    --accent2: #818cf8;
-    --cell: #16233f;
-    --cell-active: #1e3a5f;
-    --cell-word: #182a4d;
-    --good: #34d399;
-    --bad: #fb7185;
-    --shadow: 0 10px 40px rgba(0,0,0,0.45);
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; }
-  body {
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(1200px 600px at 20% -10%, #15294d 0%, var(--bg) 55%) , var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 18px 14px 120px;
-  }
-  header { width: 100%; max-width: 1000px; }
-  .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.5px;
-       background: linear-gradient(90deg, var(--accent), var(--accent2));
-       -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .tag { color: var(--muted); font-size: 0.85rem; }
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 8px; align-items: center; }
-  select, button {
-    font: inherit; color: var(--ink); cursor: pointer;
-    background: var(--glass); border: 1px solid var(--glass-border);
-    padding: 9px 14px; border-radius: 12px; backdrop-filter: blur(8px);
-    transition: transform .08s ease, background .2s ease, border-color .2s;
-  }
-  button:hover, select:hover { border-color: var(--accent); }
-  button:active { transform: scale(0.96); }
-  button.primary { background: linear-gradient(90deg, rgba(94,234,212,.18), rgba(129,140,248,.18)); }
-  .layout { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 12px; }
-  @media (min-width: 820px) { .layout { grid-template-columns: auto 1fr; align-items: start; } }
-  .board-wrap {
-    background: var(--glass); border: 1px solid var(--glass-border); border-radius: 18px;
-    padding: 14px; box-shadow: var(--shadow); backdrop-filter: blur(10px);
-    overflow: auto; align-self: start;
-  }
-  table { border-collapse: collapse; margin: 0 auto; }
-  td {
-    width: 42px; height: 42px; padding: 0; text-align: center; position: relative;
-    border: 1px solid rgba(0,0,0,0.45);
-  }
-  td.block { background: transparent; border-color: transparent; }
-  td.cell { background: var(--cell); cursor: pointer; }
-  td.cell.in-word { background: var(--cell-word); }
-  td.cell.active { background: var(--cell-active); box-shadow: inset 0 0 0 2px var(--accent); }
-  td.cell.good { color: var(--good); }
-  td.cell.bad { color: var(--bad); }
-  td .num { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--muted); line-height: 1; }
-  td .val { font-size: 17px; font-weight: 600; letter-spacing: -0.5px; text-transform: uppercase; }
-  .side { display: flex; flex-direction: column; gap: 18px; }
-  .clues { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 18px; padding: 16px 18px; backdrop-filter: blur(10px); }
-  .clues h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin: 0 0 10px; }
-  .clue { display: flex; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: .92rem; line-height: 1.35; }
-  .clue:hover { background: rgba(255,255,255,0.05); }
-  .clue.active { background: rgba(94,234,212,0.12); }
-  .clue.solved { color: var(--muted); }
-  .clue.solved .cnum { text-decoration: line-through; }
-  .clue .cnum { color: var(--accent2); font-weight: 700; min-width: 20px; }
-  .status { font-size: .9rem; color: var(--muted); min-height: 1.2em; }
-  .status.win { color: var(--good); font-weight: 700; }
-  /* on-screen grapheme keypad — lets players enter digraphs that have no single key */
-  .keypad { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
-    background: rgba(10,16,30,0.92); border-top: 1px solid var(--glass-border); backdrop-filter: blur(14px);
-    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; z-index: 50; }
-  .keypad button { padding: 10px 12px; min-width: 40px; border-radius: 10px; font-size: 1rem; }
-  .keypad .di { color: var(--accent); border-color: rgba(94,234,212,0.35); }
-  .keypad .util { color: var(--accent2); }
-  .legend { font-size: .8rem; color: var(--muted); margin-top: 6px; }
-  .legend b { color: var(--ink); font-weight: 600; }
+/* ── tokens ── */
+:root {
+  --bg:           #0f1117;
+  --bg2:          #161b27;
+  --surface:      #1e2535;
+  --surface2:     #252d40;
+  --border:       rgba(255,255,255,0.08);
+  --border2:      rgba(255,255,255,0.14);
+  --ink:          #e8eef8;
+  --muted:        #7a8aaa;
+  --dim:          #4a5570;
+
+  /* crossword cell palette — NYT-proven dual-tone */
+  --cell-bg:      #f0f4ff;  /* near-white live cells — max contrast against black blocks */
+  --cell-border:  #c5cfe8;
+  --cell-ink:     #0f1117;  /* dark text on light cells */
+  --cell-outer:   #0f1117;  /* block cells = true black */
+  --cell-word:    #bcd0f7;  /* light blue — active word */
+  --cell-active:  #f7d000;  /* gold yellow — active cell (NYT standard) */
+  --cell-pencil:  #d0d8ee;  /* pencil-mode entry */
+
+  --accent:       #5eead4;
+  --accent2:      #818cf8;
+  --good:         #34d399;
+  --bad:          #fb7185;
+  --warn:         #fbbf24;
+  --shadow:       0 12px 40px rgba(0,0,0,0.55);
+  --r:            14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{min-height:100vh;}
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--ink);
+  display:flex; flex-direction:column; align-items:center;
+  padding:14px 12px 180px;
+}
+
+/* ── header ── */
+header{width:100%;max-width:1060px;margin-bottom:12px;}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+h1{
+  font-size:1.55rem;letter-spacing:-0.5px;font-weight:800;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand-sub{color:var(--muted);font-size:.82rem;}
+
+/* ── toolbar ── */
+.toolbar{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;
+}
+.toolbar select, .toolbar button, .toolbar label.toggle{
+  font:inherit;color:var(--ink);cursor:pointer;
+  background:var(--surface);border:1px solid var(--border2);
+  padding:8px 13px;border-radius:10px;
+  transition:background .15s,border-color .15s,transform .08s;
+  white-space:nowrap;font-size:.85rem;
+}
+.toolbar button:hover,.toolbar label.toggle:hover{border-color:var(--accent);}
+.toolbar button:active,.toolbar label.toggle:active{transform:scale(.96);}
+.toolbar button.primary{
+  background:linear-gradient(135deg,rgba(94,234,212,.2),rgba(129,140,248,.2));
+  border-color:rgba(94,234,212,.35);
+}
+.toolbar button.danger{border-color:rgba(251,113,133,.35);color:var(--bad);}
+.toolbar .sep{width:1px;height:24px;background:var(--border2);align-self:center;}
+/* pill toggles */
+.toggle-group{display:flex;gap:0;}
+.toggle-group label{
+  border-radius:0;border-right-width:0;font-size:.82rem;
+  padding:8px 11px;
+}
+.toggle-group label:first-child{border-radius:10px 0 0 10px;}
+.toggle-group label:last-child{border-radius:0 10px 10px 0;border-right-width:1px;}
+.toggle-group input{display:none;}
+.toggle-group input:checked + span{color:var(--accent);}
+label.toggle input{display:none;}
+label.toggle.active-lbl{border-color:var(--accent);color:var(--accent);}
+
+/* ── clue bar (above grid, NYT-style) ── */
+.clue-bar{
+  width:100%;max-width:1060px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:10px 16px;
+  display:flex;align-items:center;gap:12px;margin-bottom:10px;
+  min-height:46px;
+}
+.clue-bar .cb-num{
+  color:var(--accent2);font-weight:700;font-size:.9rem;min-width:36px;
+}
+.clue-bar .cb-dir{
+  color:var(--muted);font-size:.78rem;text-transform:uppercase;
+  letter-spacing:1px;min-width:48px;
+}
+.clue-bar .cb-text{
+  flex:1;font-size:.95rem;line-height:1.35;color:var(--ink);
+}
+.clue-bar .cb-len{color:var(--dim);font-size:.82rem;white-space:nowrap;}
+
+/* ── status bar ── */
+.status-bar{
+  width:100%;max-width:1060px;
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;font-size:.83rem;color:var(--muted);
+  flex-wrap:wrap;gap:6px;
+}
+.status-msg.win{color:var(--good);font-weight:700;}
+.status-msg.err{color:var(--bad);}
+#timer{font-variant-numeric:tabular-nums;color:var(--muted);}
+#timer.hidden-timer{visibility:hidden;}
+
+/* ── main layout ── */
+.layout{
+  width:100%;max-width:1060px;
+  display:grid;grid-template-columns:1fr;gap:16px;
+}
+@media(min-width:820px){.layout{grid-template-columns:auto 1fr;align-items:start;}}
+
+/* ── grid ── */
+.board-wrap{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px;
+  box-shadow:var(--shadow);
+  overflow:auto;align-self:start;
+}
+/*
+  KEY FIX: use CSS Grid (not HTML table) so each cell has independent borders
+  that are never collapsed. Block squares blend into the outer background.
+*/
+#board{display:inline-grid;gap:3px;background:var(--cell-outer);
+       border:3px solid var(--cell-outer);border-radius:5px;}
+.cell,.block{width:48px;height:48px;position:relative;}
+.block{background:var(--cell-outer);}
+.cell{
+  background:var(--cell-bg);
+  border:1px solid var(--cell-border);
+  border-radius:2px;
+  cursor:pointer;
+  transition:background .1s;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--cell-ink);
+}
+.cell.in-word{background:var(--cell-word);}
+.cell.active{background:var(--cell-active) !important;color:#1a1000;}
+.cell.pencil-cell .val{color:#5a6e9a;font-style:italic;}
+.cell.correct .val{color:#076f3e;}
+.cell.wrong .val{color:#cc1f3a;}
+.cell.autocheck-wrong{box-shadow:inset 0 -3px 0 var(--bad);}
+
+.num{position:absolute;top:2px;left:3px;font-size:9px;color:#4a5a7a;line-height:1;pointer-events:none;font-weight:600;}
+.val{font-size:18px;font-weight:700;letter-spacing:-.5px;text-transform:uppercase;pointer-events:none;line-height:1;}
+
+/* ── clue panels ── */
+.side{display:flex;flex-direction:column;gap:14px;}
+.clue-panel{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px 16px;max-height:380px;overflow-y:auto;
+}
+.clue-panel h2{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:1.8px;
+  color:var(--accent);margin-bottom:10px;font-weight:700;
+}
+.clue-item{
+  display:flex;gap:8px;padding:5px 7px;border-radius:8px;
+  cursor:pointer;font-size:.88rem;line-height:1.4;
+  transition:background .1s;
+}
+.clue-item:hover{background:rgba(255,255,255,0.05);}
+.clue-item.active{background:rgba(94,234,212,.1);border-left:2px solid var(--accent);padding-left:5px;}
+.clue-item.solved{color:var(--dim);}
+.clue-item .cnum{color:var(--accent2);font-weight:700;min-width:22px;font-size:.85rem;}
+.clue-item .clen{color:var(--dim);font-size:.8rem;}
+
+/* ── pencil indicator ── */
+.pencil-badge{
+  display:none;background:rgba(139,163,212,.15);color:#8ba3d4;
+  border:1px solid rgba(139,163,212,.3);border-radius:6px;
+  padding:3px 9px;font-size:.78rem;font-weight:600;letter-spacing:.5px;
+}
+.pencil-mode .pencil-badge{display:inline-block;}
+
+/* ── hint / reveal modal ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:200;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:18px;
+  padding:28px 32px;max-width:380px;width:90%;box-shadow:var(--shadow);
+}
+.modal h3{font-size:1.1rem;margin-bottom:8px;}
+.modal p{color:var(--muted);font-size:.88rem;margin-bottom:20px;line-height:1.5;}
+.modal .btn-row{display:flex;flex-direction:column;gap:10px;}
+.modal-btn{
+  font:inherit;cursor:pointer;color:var(--ink);
+  background:var(--surface);border:1px solid var(--border2);
+  padding:11px 16px;border-radius:11px;text-align:left;
+  transition:background .15s,border-color .15s;
+}
+.modal-btn:hover{border-color:var(--accent);background:var(--surface2);}
+.modal-btn b{display:block;margin-bottom:2px;}
+.modal-btn small{color:var(--muted);font-size:.8rem;}
+.modal-btn.destructive{border-color:rgba(251,113,133,.3);}
+.modal-btn.destructive:hover{border-color:var(--bad);}
+.modal-cancel{
+  margin-top:12px;width:100%;font:inherit;cursor:pointer;
+  background:transparent;border:none;color:var(--muted);font-size:.88rem;
+  padding:8px;border-radius:8px;
+}
+.modal-cancel:hover{color:var(--ink);}
+
+/* ── keypad ── */
+.keypad{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  background:rgba(10,14,24,.95);border-top:1px solid var(--border2);
+  backdrop-filter:blur(16px);
+  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;z-index:50;
+}
+.keypad button{
+  font:inherit;color:var(--ink);cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border);
+  padding:9px 10px;min-width:36px;border-radius:9px;font-size:.9rem;
+  transition:background .1s,transform .06s;
+}
+.keypad button:active{transform:scale(.93);}
+.keypad .kdi{color:var(--accent);border-color:rgba(94,234,212,.25);}
+.keypad .kutil{color:var(--accent2);}
+
+/* ── legend ── */
+.legend{font-size:.76rem;color:var(--dim);margin-top:10px;line-height:1.5;}
+.legend b{color:var(--muted);}
+
+/* ── streak badge ── */
+.streak{display:flex;align-items:center;gap:5px;font-size:.82rem;color:var(--warn);}
+.streak svg{width:14px;height:14px;}
 </style>
 </head>
 <body>
+
 <header>
   <div class="brand">
     <h1>Mhanga</h1>
-    <span class="tag">a grapheme-aware crossword for Bantu languages</span>
+    <span class="brand-sub">grapheme-aware crossword · Bantu languages</span>
+    <span class="pencil-badge" id="pencilBadge">✏ PENCIL</span>
   </div>
-  <div class="controls">
+  <div class="toolbar">
     <select id="lang" aria-label="Language"></select>
-    <button id="new" class="primary">New puzzle</button>
-    <button id="check">Check</button>
-    <button id="reveal">Reveal word</button>
-    <button id="clear">Clear</button>
+    <button id="btnNew" class="primary">New Puzzle</button>
+    <div class="sep"></div>
+
+    <!-- Check group -->
+    <button id="btnCheck">Check</button>
+    <label class="toggle" id="lblAutocheck" title="Autocheck: show errors as you type">
+      <input type="checkbox" id="cbAutocheck" />
+      <span>Autocheck</span>
+    </label>
+
+    <!-- Reveal / Hint group -->
+    <button id="btnHint">Hint ▾</button>
+
+    <div class="sep"></div>
+
+    <!-- Pencil mode -->
+    <label class="toggle" id="lblPencil" title="Pencil mode: mark uncertain letters in grey">
+      <input type="checkbox" id="cbPencil" />
+      <span>✏ Pencil</span>
+    </label>
+
+    <!-- Timer -->
+    <label class="toggle" id="lblTimer" title="Toggle timer">
+      <input type="checkbox" id="cbTimer" checked />
+      <span>⏱</span>
+    </label>
+
+    <button id="btnClear" class="danger">Clear</button>
   </div>
-  <div id="status" class="status"></div>
 </header>
 
-<div class="layout">
-  <div class="board-wrap"><table id="board"></table>
-    <div class="legend">Each cell holds one <b>grapheme</b>. Digraphs like <b>ng'</b>, <b>zv</b>, <b>ch</b> fill a single square — tap them on the keypad below.</div>
-  </div>
-  <div class="side">
-    <div class="clues"><h2>Across</h2><div id="across"></div></div>
-    <div class="clues"><h2>Down</h2><div id="down"></div></div>
+<!-- Clue bar — shows active clue prominently above grid (NYT-style) -->
+<div class="clue-bar" id="clueBar">
+  <span class="cb-num" id="cbNum">—</span>
+  <span class="cb-dir" id="cbDir"></span>
+  <span class="cb-text" id="cbText">Select a square or clue to begin</span>
+  <span class="cb-len" id="cbLen"></span>
+</div>
+
+<!-- Status + timer row -->
+<div class="status-bar">
+  <span class="status-msg" id="statusMsg"></span>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="streak" id="streakBadge" style="display:none">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"/></svg>
+      <span id="streakCount">0</span>
+    </div>
+    <span id="timer" class="">00:00</span>
   </div>
 </div>
 
+<div class="layout">
+  <!-- Grid -->
+  <div class="board-wrap">
+    <div id="board"></div>
+    <div class="legend">
+      Each cell = one <b>grapheme</b>. Digraphs like <b>ng'</b>, <b>zv</b>, <b>ch</b> = one square — use the keypad below.
+    </div>
+  </div>
+
+  <!-- Clue panels -->
+  <div class="side">
+    <div class="clue-panel"><h2>Across</h2><div id="acrossClues"></div></div>
+    <div class="clue-panel"><h2>Down</h2><div id="downClues"></div></div>
+  </div>
+</div>
+
+<!-- Hint / Reveal modal -->
+<div class="modal-overlay" id="hintModal">
+  <div class="modal">
+    <h3>Hint &amp; Reveal</h3>
+    <p>Choose how much help you want. Using reveal marks the word and won't count toward a clean-solve streak.</p>
+    <div class="btn-row">
+      <button class="modal-btn" id="hintLetter">
+        <b>Reveal Letter</b>
+        <small>Fill in the current cell only</small>
+      </button>
+      <button class="modal-btn" id="hintWord">
+        <b>Reveal Word</b>
+        <small>Fill in the entire selected word</small>
+      </button>
+      <button class="modal-btn destructive" id="hintPuzzle">
+        <b>Reveal Entire Puzzle</b>
+        <small>Show all answers — puzzle is complete</small>
+      </button>
+    </div>
+    <button class="modal-cancel" id="hintCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- On-screen grapheme keypad -->
 <div class="keypad" id="keypad"></div>
 
 <script>
 "use strict";
 
 /* ============================================================
-   1. LANGUAGE DATA  (config + clued wordlists, embedded)
+   1. LANGUAGE DATA
    ============================================================ */
 const LANGUAGES = {
   Shona: {
     config: {
-      language: "Shona",
-      atomic_graphemes: ["ch","sh","sv","zv","ng","mb","nd","nj","ny","nz","mh","pf","ts","dz","vh"],
-      ignore_casing: true, strip_diacritics: false, preserve_marks: []
+      language:"Shona",
+      atomic_graphemes:["ch","sh","sv","zv","ng","mb","nd","nj","ny","nz","mh","pf","ts","dz","vh"],
+      ignore_casing:true, strip_diacritics:false, preserve_marks:[]
     },
-    words: [
+    words:[
       ["chikoro","Nzvimbo inodzidzirwa vana (school)"],
       ["shamwari","Munhu waunoda uye waunovimba naye (friend)"],
       ["ngoma","Chiridzwa chinorohwa (drum)"],
@@ -139,20 +371,20 @@ const LANGUAGES = {
       ["nyika","Pasi rinogarwa nevanhu (country / land)"],
       ["svondo","Mazuva manomwe (week / Sunday)"],
       ["zvombo","Zvinhu zvinoshandiswa kurwa (weapons / tools)"],
-      ["ndima","Chikamu chebasa rekurima (a portion of field)"],
-      ["tsanga","Tsanga yembeu (a grain / seed)"],
+      ["ndima","Chikamu chebasa rekurima (portion of field)"],
+      ["tsanga","Tsanga yembeu (grain / seed)"],
       ["amai","Mubereki wechikadzi (mother)"],
       ["baba","Mubereki wechirume (father)"],
       ["nzira","Penzira inofambwa (path / road)"]
     ]
   },
-  Swahili: {
-    config: {
-      language: "Swahili",
-      atomic_graphemes: ["ng'","ch","sh","gh","kh","th","dh","ng","ny","mb","nd"],
-      ignore_casing: true, strip_diacritics: true, preserve_marks: ["'"]
+  Swahili:{
+    config:{
+      language:"Swahili",
+      atomic_graphemes:["ng'","ch","sh","gh","kh","th","dh","ng","ny","mb","nd"],
+      ignore_casing:true, strip_diacritics:true, preserve_marks:["'"]
     },
-    words: [
+    words:[
       ["shule","Mahali wanafunzi husoma (school)"],
       ["chakula","Kitu tunachokula (food)"],
       ["ng'ombe","Mnyama anayetoa maziwa (cow)"],
@@ -163,359 +395,493 @@ const LANGUAGES = {
       ["shamba","Mahali pa kulima (farm / field)"],
       ["nyumba","Mahali pa kuishi (house)"],
       ["mbingu","Anga la juu (sky / heaven)"],
-      ["dhahabu","Madini ya thamani ya rangi ya manjano (gold)"],
+      ["dhahabu","Madini ya thamani (gold)"],
       ["chai","Kinywaji cha moto (tea)"]
     ]
   }
 };
 
 /* ============================================================
-   2. TOKENIZER  (grapheme-aware, maximal-munch)
+   2. TOKENIZER (grapheme-aware, maximal-munch)
    ============================================================ */
 class Language {
-  constructor(cfg) {
-    this.name = cfg.language;
-    this.ignoreCasing = cfg.ignore_casing;
-    this.stripDiacritics = cfg.strip_diacritics;
-    this.preserve = cfg.preserve_marks || [];
-    // longest grapheme first => "ng'" beats "ng" beats "n"
-    this.ordered = [...new Set((cfg.atomic_graphemes||[]).map(g => this.normalize(g)))]
-      .sort((a,b) => b.length - a.length);
+  constructor(cfg){
+    this.name=cfg.language;
+    this.ignoreCasing=cfg.ignore_casing;
+    this.stripDiacritics=cfg.strip_diacritics;
+    this.preserve=cfg.preserve_marks||[];
+    this.ordered=[...new Set((cfg.atomic_graphemes||[]).map(g=>this.normalize(g)))]
+      .sort((a,b)=>b.length-a.length);
   }
-  normalize(text) {
-    if (this.ignoreCasing) text = text.toLowerCase();
-    if (this.stripDiacritics) {
-      const sent = {};
-      this.preserve.forEach((m,i) => { sent[m] = String.fromCharCode(0xE000+i); });
-      for (const m in sent) text = text.split(m).join(sent[m]);
-      text = text.normalize("NFD").replace(/\p{Mn}/gu, "").normalize("NFC");
-      for (const m in sent) text = text.split(sent[m]).join(m);
+  normalize(text){
+    if(this.ignoreCasing) text=text.toLowerCase();
+    if(this.stripDiacritics){
+      const sent={};
+      this.preserve.forEach((m,i)=>{sent[m]=String.fromCharCode(0xE000+i);});
+      for(const m in sent) text=text.split(m).join(sent[m]);
+      text=text.normalize("NFD").replace(/\p{Mn}/gu,"").normalize("NFC");
+      for(const m in sent) text=text.split(sent[m]).join(m);
     }
     return text;
   }
-  tokenize(word) {
-    const t = this.normalize(word); const out = []; let i = 0;
-    while (i < t.length) {
-      let matched = null;
-      for (const g of this.ordered) { if (t.startsWith(g, i)) { matched = g; break; } }
-      if (matched) { out.push(matched); i += matched.length; }
-      else { out.push(t[i]); i += 1; }
+  tokenize(word){
+    const t=this.normalize(word);const out=[];let i=0;
+    while(i<t.length){
+      let matched=null;
+      for(const g of this.ordered){if(t.startsWith(g,i)){matched=g;break;}}
+      if(matched){out.push(matched);i+=matched.length;}
+      else{out.push(t[i]);i+=1;}
     }
     return out;
   }
 }
 
 /* ============================================================
-   3. GENERATOR  (greedy crossing placement + repeated sweep)
+   3. GENERATOR (greedy crossing placement)
    ============================================================ */
-const ACROSS = "across", DOWN = "down";
-
-function generate(entries, lang) {
-  let toks = entries.map(e => ({entry: e, tokens: lang.tokenize(e[0])})).filter(x => x.tokens.length);
-  toks.sort((a,b) => b.tokens.length - a.tokens.length);
-
-  const cells = new Map();           // "r,c" -> token
-  const placements = [];
-  const key = (r,c) => r + "," + c;
-
-  function canPlace(tokens, row, col, dir) {
-    let crossings = 0;
-    const [dr,dc] = dir === ACROSS ? [0,1] : [1,0];
-    if (cells.has(key(row-dr, col-dc))) return -1;
-    if (cells.has(key(row+dr*tokens.length, col+dc*tokens.length))) return -1;
-    for (let i=0;i<tokens.length;i++) {
-      const r=row+dr*i, c=col+dc*i, ex = cells.get(key(r,c));
-      if (ex !== undefined) { if (ex !== tokens[i]) return -1; crossings++; }
-      else {
-        const [a,b] = dir===ACROSS ? [[r-1,c],[r+1,c]] : [[r,c-1],[r,c+1]];
-        if (cells.has(key(a[0],a[1])) || cells.has(key(b[0],b[1]))) return -1;
+const ACROSS="across",DOWN="down";
+function generate(entries,lang){
+  let toks=entries.map(e=>({entry:e,tokens:lang.tokenize(e[0])})).filter(x=>x.tokens.length);
+  toks.sort((a,b)=>b.tokens.length-a.tokens.length);
+  const cells=new Map(),placements=[];
+  const key=(r,c)=>r+","+c;
+  function canPlace(tokens,row,col,dir){
+    let crossings=0;
+    const[dr,dc]=dir===ACROSS?[0,1]:[1,0];
+    if(cells.has(key(row-dr,col-dc)))return -1;
+    if(cells.has(key(row+dr*tokens.length,col+dc*tokens.length)))return -1;
+    for(let i=0;i<tokens.length;i++){
+      const r=row+dr*i,c=col+dc*i,ex=cells.get(key(r,c));
+      if(ex!==undefined){if(ex!==tokens[i])return -1;crossings++;}
+      else{
+        const[a,b]=dir===ACROSS?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];
+        if(cells.has(key(a[0],a[1]))||cells.has(key(b[0],b[1])))return -1;
       }
     }
-    if (placements.length && crossings===0) return -1;
+    if(placements.length&&crossings===0)return -1;
     return crossings;
   }
-  function commit(p) {
-    p.tokens.forEach((t,i) => {
-      const r = p.dir===ACROSS ? p.row : p.row+i;
-      const c = p.dir===ACROSS ? p.col+i : p.col;
-      cells.set(key(r,c), t);
+  function commit(p){
+    p.tokens.forEach((t,i)=>{
+      const r=p.dir===ACROSS?p.row:p.row+i,c=p.dir===ACROSS?p.col+i:p.col;
+      cells.set(key(r,c),t);
     });
     placements.push(p);
   }
-  function best(entry, tokens) {
-    let cands = [];
-    for (const [k, gtok] of cells) {
-      const [gr,gc] = k.split(",").map(Number);
-      for (let i=0;i<tokens.length;i++) {
-        if (tokens[i] !== gtok) continue;
-        for (const dir of [ACROSS,DOWN]) {
-          const row = dir===ACROSS ? gr : gr-i;
-          const col = dir===ACROSS ? gc-i : gc;
-          const score = canPlace(tokens,row,col,dir);
-          if (score>0) {
-            const cr = dir===ACROSS ? row : row+(tokens.length>>1);
-            const cc = dir===ACROSS ? col+(tokens.length>>1) : col;
-            cands.push({score, compact: -(Math.abs(cr)+Math.abs(cc)), p:{entry,tokens,row,col,dir}});
+  function best(entry,tokens){
+    let cands=[];
+    for(const[k,gtok]of cells){
+      const[gr,gc]=k.split(",").map(Number);
+      for(let i=0;i<tokens.length;i++){
+        if(tokens[i]!==gtok)continue;
+        for(const dir of[ACROSS,DOWN]){
+          const row=dir===ACROSS?gr:gr-i,col=dir===ACROSS?gc-i:gc;
+          const score=canPlace(tokens,row,col,dir);
+          if(score>0){
+            const cr=dir===ACROSS?row:row+(tokens.length>>1);
+            const cc=dir===ACROSS?col+(tokens.length>>1):col;
+            cands.push({score,compact:-(Math.abs(cr)+Math.abs(cc)),p:{entry,tokens,row,col,dir}});
           }
         }
       }
     }
-    if (!cands.length) return null;
-    cands.sort((a,b) => b.score-a.score || b.compact-a.compact);
+    if(!cands.length)return null;
+    cands.sort((a,b)=>b.score-a.score||b.compact-a.compact);
     return cands[0].p;
   }
-
-  commit({entry: toks[0].entry, tokens: toks[0].tokens, row:0, col:0, dir:ACROSS});
-  let rem = toks.slice(1), progress = true;
-  while (rem.length && progress) {
-    progress = false; const left = [];
-    for (const {entry, tokens} of rem) {
-      const p = best(entry, tokens);
-      if (p) { commit(p); progress = true; } else left.push({entry, tokens});
+  commit({entry:toks[0].entry,tokens:toks[0].tokens,row:0,col:0,dir:ACROSS});
+  let rem=toks.slice(1),progress=true;
+  while(rem.length&&progress){
+    progress=false;const left=[];
+    for(const{entry,tokens}of rem){
+      const p=best(entry,tokens);
+      if(p){commit(p);progress=true;}else left.push({entry,tokens});
     }
-    rem = left;
+    rem=left;
   }
-  number(placements);
-  return {cells, placements};
-}
-
-function number(placements) {
-  const starts = new Map();
-  for (const p of placements) {
-    const k = p.row + "," + p.col;
-    if (!starts.has(k)) starts.set(k, []);
-    starts.get(k).push(p);
-  }
-  const keys = [...starts.keys()].sort((a,b) => {
-    const [ar,ac]=a.split(",").map(Number), [br,bc]=b.split(",").map(Number);
-    return ar-br || ac-bc;
-  });
-  keys.forEach((k,idx) => starts.get(k).forEach(p => p.number = idx+1));
+  // number start cells in reading order
+  const starts=new Map();
+  for(const p of placements){const k=p.row+","+p.col;if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
+  [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;})
+    .forEach((k,idx)=>starts.get(k).forEach(p=>p.number=idx+1));
+  return{cells,placements};
 }
 
 /* ============================================================
-   4. GAME STATE + RENDERING
+   4. GAME STATE
    ============================================================ */
-let lang, puzzle, guesses, bounds, active = null; // active = {placement, idx}
-let pending = ""; // partial grapheme being composed via the physical keyboard (IME-style)
-function resetCompose(){ pending = ""; }
+let lang,puzzle,guesses,pencilSet,revealedCells,bounds,active=null;
+let autochecking=false,pencilMode=false,timerOn=true;
+let timerSec=0,timerInterval=null,cleanSolve=true,streak=0;
+let pending=""; // IME compose buffer
 
-function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
-function newPuzzle(langName) {
-  const data = LANGUAGES[langName];
-  lang = new Language(data.config);
-  // pick a random subset (7) for variety each round, longest-biased
-  const words = shuffle(data.words).slice(0, 8);
-  puzzle = generate(words, lang);
-  guesses = new Map();              // "r,c" -> typed grapheme
-  for (const k of puzzle.cells.keys()) guesses.set(k, "");
+function cellKey(r,c){return r+","+c;}
+
+function newPuzzle(langName){
+  const data=LANGUAGES[langName];
+  lang=new Language(data.config);
+  const words=shuffle(data.words);
+  puzzle=generate(words,lang);
+  guesses=new Map();
+  pencilSet=new Set();
+  revealedCells=new Set();
+  for(const k of puzzle.cells.keys())guesses.set(k,"");
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
-  bounds = {rmin:Math.min(...rs), rmax:Math.max(...rs), cmin:Math.min(...cs), cmax:Math.max(...cs)};
-  active = null;
-  setStatus(`${puzzle.placements.length} words · tap a square or clue to begin`);
-  render(); renderClues(); renderKeypad();
+  bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
+  active=null; pending=""; cleanSolve=true;
+  resetTimer();startTimer();
+  setStatus(`${puzzle.placements.length} words · select a square to begin`);
+  render();renderClues();renderKeypad();updateClueBar();
 }
 
-function numberMap() {
-  const m = new Map();
-  for (const p of puzzle.placements) { const k=p.row+","+p.col; if(!m.has(k)) m.set(k,p.number); }
+/* ── coords / lookups ── */
+function wordKeys(p){
+  const out=[];
+  for(let i=0;i<p.tokens.length;i++){
+    const r=p.dir===ACROSS?p.row:p.row+i,c=p.dir===ACROSS?p.col+i:p.col;
+    out.push(cellKey(r,c));
+  }return out;
+}
+function numberMap(){
+  const m=new Map();
+  for(const p of puzzle.placements){const k=cellKey(p.row,p.col);if(!m.has(k))m.set(k,p.number);}
   return m;
 }
-function wordCellsKeys(p){
-  const out=[]; for(let i=0;i<p.tokens.length;i++){
-    const r=p.dir===ACROSS?p.row:p.row+i, c=p.dir===ACROSS?p.col+i:p.col; out.push(r+","+c);
-  } return out;
-}
+function wordsThrough(k){return puzzle.placements.filter(p=>wordKeys(p).includes(k));}
+function isSolved(p){return wordKeys(p).every(k=>(guesses.get(k)||"")===puzzle.cells.get(k));}
+function allSolved(){return puzzle.placements.every(isSolved);}
 
-function render() {
-  const t = document.getElementById("board");
-  const nums = numberMap();
-  const activeKeys = active ? new Set(wordCellsKeys(active.placement)) : new Set();
-  let html = "";
-  for (let r=bounds.rmin; r<=bounds.rmax; r++) {
-    html += "<tr>";
-    for (let c=bounds.cmin; c<=bounds.cmax; c++) {
-      const k = r+","+c;
-      if (!puzzle.cells.has(k)) { html += '<td class="block"></td>'; continue; }
-      const cls = ["cell"];
-      if (activeKeys.has(k)) cls.push("in-word");
-      if (active && active.placement.row+(active.placement.dir===ACROSS?0:active.idx)===r &&
-          active.placement.col+(active.placement.dir===ACROSS?active.idx:0)===c) cls.push("active");
-      const num = nums.get(k);
-      html += `<td class="${cls.join(' ')}" data-k="${k}">`+
-              (num?`<span class="num">${num}</span>`:"")+
-              `<span class="val">${guesses.get(k)||""}</span></td>`;
+/* ============================================================
+   5. RENDER — CSS Grid board (fixes missing border lines)
+   ============================================================ */
+function render(){
+  const board=document.getElementById("board");
+  const cols=bounds.cmax-bounds.cmin+1,rows=bounds.rmax-bounds.rmin+1;
+  board.style.gridTemplateColumns=`repeat(${cols},44px)`;
+  board.style.gridTemplateRows=`repeat(${rows},44px)`;
+  const nums=numberMap();
+  const activeKeys=active?new Set(wordKeys(active.placement)):new Set();
+  const activeCellKey=active?wordKeys(active.placement)[active.idx]:null;
+
+  let html="";
+  for(let r=bounds.rmin;r<=bounds.rmax;r++){
+    for(let c=bounds.cmin;c<=bounds.cmax;c++){
+      const k=cellKey(r,c);
+      if(!puzzle.cells.has(k)){html+=`<div class="block"></div>`;continue;}
+      const cls=["cell"];
+      if(k===activeCellKey) cls.push("active");
+      else if(activeKeys.has(k)) cls.push("in-word");
+      const g=guesses.get(k)||"";
+      if(pencilSet.has(k)&&g) cls.push("pencil-cell");
+      if(autochecking&&g&&!revealedCells.has(k)){
+        if(g===puzzle.cells.get(k)) cls.push("correct");
+        else if(g!==puzzle.cells.get(k)) cls.push("autocheck-wrong");
+      }
+      const num=nums.get(k);
+      html+=`<div class="${cls.join(" ")}" data-k="${k}">
+        ${num?`<span class="num">${num}</span>`:""}
+        <span class="val">${g.toUpperCase()}</span>
+      </div>`;
     }
-    html += "</tr>";
   }
-  t.innerHTML = html;
-  t.querySelectorAll("td.cell").forEach(td => td.onclick = () => onCellClick(td.dataset.k));
+  board.innerHTML=html;
+  board.querySelectorAll(".cell").forEach(el=>el.addEventListener("click",()=>onCellClick(el.dataset.k)));
 }
 
-function onCellClick(k) {
-  // find words through this cell; toggle direction if re-clicking active word
-  const through = puzzle.placements.filter(p => wordCellsKeys(p).includes(k));
-  if (!through.length) return;
-  let chosen = through[0];
-  if (active && through.length>1 && wordCellsKeys(active.placement).includes(k)) {
-    chosen = through.find(p => p !== active.placement) || through[0];
-  } else if (active && through.includes(active.placement)) {
-    chosen = active.placement;
+/* ============================================================
+   6. CLUE BAR + CLUE PANELS
+   ============================================================ */
+function updateClueBar(){
+  if(!active){
+    document.getElementById("cbNum").textContent="—";
+    document.getElementById("cbDir").textContent="";
+    document.getElementById("cbText").textContent="Select a square or clue to begin";
+    document.getElementById("cbLen").textContent="";
+    return;
   }
-  const idx = wordCellsKeys(chosen).indexOf(k);
-  active = {placement: chosen, idx};
-  resetCompose();
-  render(); highlightClue();
+  const p=active.placement;
+  document.getElementById("cbNum").textContent=p.number;
+  document.getElementById("cbDir").textContent=p.dir.toUpperCase();
+  document.getElementById("cbText").textContent=p.entry[1];
+  document.getElementById("cbLen").textContent=`(${p.tokens.length})`;
 }
 
-function renderClues() {
-  const mk = (dir, el) => {
-    const items = puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.number-b.number);
-    document.getElementById(el).innerHTML = items.map(p =>
-      `<div class="clue" data-num="${p.number}" data-dir="${dir}">`+
-      `<span class="cnum">${p.number}</span><span>${p.entry[1]} <b>(${p.tokens.length})</b></span></div>`
+function renderClues(){
+  const mk=(dir,elId)=>{
+    const items=puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.number-b.number);
+    document.getElementById(elId).innerHTML=items.map(p=>
+      `<div class="clue-item${isSolved(p)?" solved":""}" data-n="${p.number}" data-d="${p.dir}">
+        <span class="cnum">${p.number}</span>
+        <span>${p.entry[1]} <span class="clen">(${p.tokens.length})</span></span>
+      </div>`
     ).join("");
   };
-  mk(ACROSS,"across"); mk(DOWN,"down");
-  document.querySelectorAll(".clue").forEach(c => c.onclick = () => {
-    const p = puzzle.placements.find(x=>x.number==c.dataset.num && x.dir===c.dataset.dir);
-    active = {placement:p, idx:0}; resetCompose(); render(); highlightClue();
+  mk(ACROSS,"acrossClues"); mk(DOWN,"downClues");
+  document.querySelectorAll(".clue-item").forEach(el=>el.addEventListener("click",()=>{
+    const p=puzzle.placements.find(x=>x.number==el.dataset.n&&x.dir===el.dataset.d);
+    if(p){active={placement:p,idx:0};pending="";render();renderClues();updateClueBar();}
+  }));
+}
+
+function highlightClues(){
+  document.querySelectorAll(".clue-item").forEach(el=>{
+    const p=puzzle.placements.find(x=>x.number==el.dataset.n&&x.dir===el.dataset.d);
+    el.classList.toggle("active",active&&p===active.placement);
+    el.classList.toggle("solved",!!p&&isSolved(p));
   });
 }
 
-function highlightClue() {
-  document.querySelectorAll(".clue").forEach(c => {
-    const p = puzzle.placements.find(x=>x.number==c.dataset.num && x.dir===c.dataset.dir);
-    c.classList.toggle("active", active && p===active.placement);
-    c.classList.toggle("solved", isSolved(p));
+/* ============================================================
+   7. INPUT: CELL CLICK, IME COMPOSE, KEYPAD
+   ============================================================ */
+function onCellClick(k){
+  const through=wordsThrough(k);
+  if(!through.length)return;
+  let chosen=through[0];
+  if(active&&through.length>1&&wordKeys(active.placement).includes(k)){
+    chosen=through.find(p=>p!==active.placement)||through[0];
+  }else if(active&&through.includes(active.placement)){
+    chosen=active.placement;
+  }
+  const idx=wordKeys(chosen).indexOf(k);
+  active={placement:chosen,idx};pending="";
+  render();highlightClues();updateClueBar();
+  scrollClueIntoView();
+}
+
+function scrollClueIntoView(){
+  if(!active)return;
+  const p=active.placement;
+  const el=document.querySelector(`.clue-item[data-n="${p.number}"][data-d="${p.dir}"]`);
+  if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+function advance(n=1){
+  if(!active)return;
+  const len=wordKeys(active.placement).length;
+  active.idx=Math.max(0,Math.min(active.idx+n,len-1));
+}
+
+function backspace(){
+  if(!active)return;
+  pending="";
+  const keys=wordKeys(active.placement);
+  if((guesses.get(keys[active.idx])||"")===""&&active.idx>0) active.idx--;
+  const k=keys[active.idx];
+  guesses.set(k,"");pencilSet.delete(k);revealedCells.delete(k);
+  afterInput();
+}
+
+function commitGrapheme(g,k){
+  guesses.set(k,g);
+  if(pencilMode) pencilSet.add(k); else pencilSet.delete(k);
+}
+
+function typeGrapheme(g){
+  if(!active)return;
+  pending="";
+  const keys=wordKeys(active.placement);
+  if(active.idx>=keys.length)return;
+  commitGrapheme(g,keys[active.idx]);
+  advance(1);afterInput();
+}
+
+// IME-style: n,g → ng ; ng,' → ng'
+function composeKey(k){
+  if(!active)return;
+  const keys=wordKeys(active.placement);
+  if(active.idx>=keys.length)return;
+  const cur=keys[active.idx];
+  const cand=pending+k;
+  const isG=lang.ordered.includes(cand);
+  const canGrow=lang.ordered.some(g=>g.length>cand.length&&g.startsWith(cand));
+  if(canGrow){pending=cand;guesses.set(cur,cand);render();highlightClues();return;}
+  if(isG){commitGrapheme(cand,cur);pending="";advance(1);afterInput();return;}
+  if(pending===""){commitGrapheme(k,cur);advance(1);afterInput();return;}
+  commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
+}
+
+function afterInput(){
+  pending="";
+  checkAutocheck();
+  if(allSolved()) onWin();
+  else{render();highlightClues();updateClueBar();}
+}
+
+/* ============================================================
+   8. AUTOCHECK
+   ============================================================ */
+function checkAutocheck(){
+  if(!autochecking)return; // styles applied during render()
+}
+
+function checkManual(){
+  let wrong=0,filled=0;
+  for(const[k,v]of guesses){if(v){filled++;if(v!==puzzle.cells.get(k))wrong++;}}
+  if(!filled){setStatus("Nothing filled yet.");return;}
+  if(wrong) setStatus(`${wrong} error${wrong>1?"s":""} found — keep going.`,"err");
+  else setStatus("All filled cells are correct ✓");
+  render();
+}
+
+/* ============================================================
+   9. REVEAL / HINT (3 levels)
+   ============================================================ */
+function revealLetter(){
+  if(!active){setStatus("Select a cell first.");return;}
+  const k=wordKeys(active.placement)[active.idx];
+  guesses.set(k,puzzle.cells.get(k));
+  pencilSet.delete(k);revealedCells.add(k);
+  cleanSolve=false;
+  advance(1);afterInput();
+}
+
+function revealWord(){
+  if(!active){setStatus("Select a word first.");return;}
+  wordKeys(active.placement).forEach(k=>{
+    guesses.set(k,puzzle.cells.get(k));
+    pencilSet.delete(k);revealedCells.add(k);
   });
+  cleanSolve=false;afterInput();
 }
 
-function isSolved(p){ return wordCellsKeys(p).every(k => (guesses.get(k)||"")===puzzle.cells.get(k)); }
-
-/* ---- input: on-screen keypad + physical keyboard ---- */
-function renderKeypad() {
-  const vowels = ["a","e","i","o","u"];
-  const consonants = "bdfghjklmnprstvwyz".split("");
-  const digraphs = lang.ordered.slice().sort();
-  const kp = document.getElementById("keypad");
-  const mk = (label, cls="") => `<button class="${cls}" data-g="${label}">${label}</button>`;
-  kp.innerHTML =
-    vowels.map(v=>mk(v)).join("") +
-    consonants.map(c=>mk(c)).join("") +
-    digraphs.map(d=>mk(d,"di")).join("") +
-    mk("⌫","util del") + mk("→","util skip");
-  kp.querySelectorAll("button").forEach(b => b.onclick = () => {
-    const g = b.dataset.g;
-    if (g==="⌫") backspace(); else if (g==="→") advance(1); else typeGrapheme(g);
-  });
-}
-
-// Direct commit — used by the on-screen keypad (digraph tiles are explicit/literal).
-function typeGrapheme(g) {
-  if (!active) return;
-  resetCompose();
-  const keys = wordCellsKeys(active.placement);
-  if (active.idx >= keys.length) return;
-  guesses.set(keys[active.idx], g);
-  advance(1); checkWin(false); render(); highlightClue();
-}
-
-// IME-style greedy composition for the physical keyboard: lets a player type
-// "n","g" and get the single grapheme "ng", with the apostrophe upgrading
-// "ng" -> "ng'". A keystroke either (a) extends a still-growable prefix and
-// previews in place, (b) completes a maximal grapheme and advances, or (c)
-// can't combine, so the pending grapheme commits and the key reprocesses fresh.
-function composeKey(k) {
-  if (!active) return;
-  const keys = wordCellsKeys(active.placement);
-  if (active.idx >= keys.length) return;
-  const cur = keys[active.idx];
-  const cand = pending + k;
-  const isGrapheme = lang.ordered.includes(cand);
-  const canGrow = lang.ordered.some(g => g.length > cand.length && g.startsWith(cand));
-
-  if (canGrow) {                       // (a) might still extend (e.g. "n" -> "ng", "ng" -> "ng'")
-    pending = cand;
-    guesses.set(cur, cand);            // preview without advancing
-    render(); highlightClue();
-    return;
+function revealPuzzle(){
+  for(const[k]of guesses){
+    guesses.set(k,puzzle.cells.get(k));
+    pencilSet.delete(k);revealedCells.add(k);
   }
-  if (isGrapheme) {                    // (b) maximal complete grapheme -> commit + advance
-    guesses.set(cur, cand);
-    resetCompose();
-    advance(1); checkWin(false); render(); highlightClue();
-    return;
-  }
-  if (pending === "") {                // (c1) standalone single character
-    guesses.set(cur, k);
-    advance(1); checkWin(false); render(); highlightClue();
-    return;
-  }
-  // (c2) pending can't combine with k: commit pending, then reprocess k on the next cell.
-  guesses.set(cur, pending);
-  resetCompose();
-  advance(1); render();
-  composeKey(k);
-}
-function backspace() {
-  if (!active) return;
-  const keys = wordCellsKeys(active.placement);
-  if ((guesses.get(keys[active.idx])||"") === "" && active.idx>0) active.idx--;
-  guesses.set(keys[active.idx], "");
-  render(); highlightClue();
-}
-function advance(n){
-  if(!active) return;
-  const len = wordCellsKeys(active.placement).length;
-  active.idx = Math.max(0, Math.min(active.idx + n, len - 1));
+  cleanSolve=false;afterInput();
+  setStatus("Puzzle revealed — try again for a clean solve!");
 }
 
-document.addEventListener("keydown", e => {
-  if (!active) return;
-  if (e.key === "Backspace") { e.preventDefault(); resetCompose(); backspace(); return; }
-  if (e.key === "ArrowRight" || e.key === "ArrowDown") { resetCompose(); advance(1); render(); return; }
-  if (e.key === "ArrowLeft" || e.key === "ArrowUp") { resetCompose(); active.idx=Math.max(0,active.idx-1); render(); return; }
-  if (/^[a-zA-Z']$/.test(e.key)) {
-    composeKey(e.key.toLowerCase());  // IME-style: builds digraphs from single keystrokes
+/* ============================================================
+   10. WIN STATE + STREAK
+   ============================================================ */
+function onWin(){
+  stopTimer();
+  const mins=Math.floor(timerSec/60).toString().padStart(2,"0");
+  const secs=(timerSec%60).toString().padStart(2,"0");
+  if(cleanSolve){
+    streak++;
+    document.getElementById("streakCount").textContent=streak;
+    document.getElementById("streakBadge").style.display="flex";
+    setStatus(`🌟 Wakunda! Clean solve in ${mins}:${secs}. Streak: ${streak}`);
+  }else{
+    setStatus(`✅ Completed in ${mins}:${secs}. (No streak — hints were used)`);
   }
+  autochecking=false;document.getElementById("cbAutocheck").checked=false;
+  render();highlightClues();
+}
+
+/* ============================================================
+   11. TIMER
+   ============================================================ */
+function resetTimer(){timerSec=0;stopTimer();updateTimerDisplay();}
+function startTimer(){if(!timerOn)return;timerInterval=setInterval(()=>{timerSec++;updateTimerDisplay();},1000);}
+function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSec/60).toString().padStart(2,"0");
+  const s=(timerSec%60).toString().padStart(2,"0");
+  document.getElementById("timer").textContent=`${m}:${s}`;
+}
+
+/* ============================================================
+   12. KEYPAD
+   ============================================================ */
+function renderKeypad(){
+  const vowels=["a","e","i","o","u"];
+  const cons="bdfghjklmnprstvwyz".split("");
+  const digs=[...lang.ordered].sort();
+  const kp=document.getElementById("keypad");
+  const mk=(label,cls="")=>`<button class="${cls}" data-g="${label}">${label.toUpperCase()}</button>`;
+  kp.innerHTML=
+    vowels.map(v=>mk(v)).join("")+
+    cons.map(c=>mk(c)).join("")+
+    digs.map(d=>mk(d,"kdi")).join("")+
+    mk("⌫","kutil del")+mk("→","kutil skip");
+  kp.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    const g=b.dataset.g;
+    if(g==="⌫")backspace();
+    else if(g==="→"){pending="";advance(1);render();highlightClues();}
+    else typeGrapheme(g.toLowerCase());
+  }));
+}
+
+/* ============================================================
+   13. TOOLBAR WIRING
+   ============================================================ */
+function setStatus(msg,cls=""){
+  const el=document.getElementById("statusMsg");
+  el.textContent=msg;el.className="status-msg"+(cls?" "+cls:"");
+}
+
+document.getElementById("btnNew").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value));
+document.getElementById("btnClear").addEventListener("click",()=>{
+  for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealedCells.delete(k);}
+  pending="";cleanSolve=true;resetTimer();startTimer();
+  render();highlightClues();setStatus("Cleared.");
+});
+document.getElementById("btnCheck").addEventListener("click",checkManual);
+
+// Autocheck toggle
+document.getElementById("cbAutocheck").addEventListener("change",function(){
+  autochecking=this.checked;
+  document.getElementById("lblAutocheck").classList.toggle("active-lbl",this.checked);
+  render();
 });
 
-/* ---- buttons ---- */
-function checkWin(announce=true) {
-  const done = puzzle.placements.every(isSolved);
-  if (done) { setStatus("🎉 Wakunda! Puzzle solved.", true); }
-  else if (announce) {
-    let wrong=0, filled=0;
-    for (const [k,v] of guesses) { if(v){ filled++; if(v!==puzzle.cells.get(k)) wrong++; } }
-    setStatus(wrong? `${wrong} cell(s) are wrong.` : `Looking good — ${filled} cells filled, keep going.`);
-    // flash correctness
-    document.querySelectorAll("td.cell").forEach(td=>{
-      const k=td.dataset.k, v=guesses.get(k);
-      td.classList.remove("good","bad");
-      if(v) td.classList.add(v===puzzle.cells.get(k)?"good":"bad");
-    });
-    setTimeout(()=>document.querySelectorAll("td.cell").forEach(td=>td.classList.remove("good","bad")),900);
+// Pencil toggle
+document.getElementById("cbPencil").addEventListener("change",function(){
+  pencilMode=this.checked;
+  document.getElementById("lblPencil").classList.toggle("active-lbl",this.checked);
+  document.body.classList.toggle("pencil-mode",this.checked);
+});
+
+// Timer toggle
+document.getElementById("cbTimer").addEventListener("change",function(){
+  timerOn=this.checked;
+  document.getElementById("timer").classList.toggle("hidden-timer",!this.checked);
+  if(this.checked&&!timerInterval) startTimer();
+  if(!this.checked) stopTimer();
+});
+
+// Hint modal
+document.getElementById("btnHint").addEventListener("click",()=>document.getElementById("hintModal").classList.add("open"));
+document.getElementById("hintCancel").addEventListener("click",()=>document.getElementById("hintModal").classList.remove("open"));
+document.getElementById("hintModal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
+document.getElementById("hintLetter").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealLetter();});
+document.getElementById("hintWord").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealWord();});
+document.getElementById("hintPuzzle").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealPuzzle();});
+
+// Physical keyboard
+document.addEventListener("keydown",e=>{
+  if(!active)return;
+  if(e.key==="Backspace"){e.preventDefault();backspace();return;}
+  if(e.key==="Tab"){e.preventDefault();pending="";advance(1);render();highlightClues();return;}
+  if(e.key===" "){e.preventDefault();
+    // toggle direction
+    const k=wordKeys(active.placement)[active.idx];
+    const through=wordsThrough(k);
+    if(through.length>1){
+      const other=through.find(p=>p!==active.placement);
+      if(other){active={placement:other,idx:wordKeys(other).indexOf(k)};pending="";}
+    }
+    render();highlightClues();updateClueBar();return;
   }
-  return done;
-}
-function setStatus(msg, win=false){ const s=document.getElementById("status"); s.textContent=msg; s.classList.toggle("win",win); }
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){pending="";advance(1);render();highlightClues();return;}
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp"){pending="";active.idx=Math.max(0,active.idx-1);render();highlightClues();return;}
+  if(/^[a-zA-Z']$/.test(e.key)) composeKey(e.key.toLowerCase());
+});
 
-document.getElementById("check").onclick = () => checkWin(true);
-document.getElementById("clear").onclick = () => { for(const k of guesses.keys()) guesses.set(k,""); render(); highlightClue(); setStatus("Cleared."); };
-document.getElementById("reveal").onclick = () => {
-  if(!active) { setStatus("Pick a word first."); return; }
-  wordCellsKeys(active.placement).forEach(k => guesses.set(k, puzzle.cells.get(k)));
-  render(); highlightClue(); checkWin(false);
-};
-document.getElementById("new").onclick = () => newPuzzle(document.getElementById("lang").value);
-const sel = document.getElementById("lang");
-Object.keys(LANGUAGES).forEach(n => { const o=document.createElement("option"); o.value=o.textContent=n; sel.appendChild(o); });
-sel.onchange = () => newPuzzle(sel.value);
+// Language selector
+const sel=document.getElementById("lang");
+Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=o.textContent=n;sel.appendChild(o);});
+sel.addEventListener("change",()=>newPuzzle(sel.value));
 
-/* boot */
+// Boot
 newPuzzle("Shona");
 </script>
 </body>
