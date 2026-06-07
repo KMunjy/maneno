@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Mhanga · Bantu Crossword</title>
 <meta name="description" content="The first grapheme-aware crossword game for Shona, Swahili and Zulu — for everyone, from diaspora to curious minds."/>
 <meta name="theme-color" content="#111827"/>
@@ -15,7 +15,7 @@
 :root{
   --bg:#0f1117;--bg2:#1a2035;--surface:#1e2840;--surface2:#28354f;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --ink:#eef2ff;--muted:#8896b3;--dim:#556080;
+  --ink:#eef2ff;--muted:#9aa8c8;--dim:#7080a8;
   --accent:#34d399;--accent2:#818cf8;--accent3:#f472b6;
   --good:#22c55e;--bad:#ef4444;--warn:#f59e0b;
   --shadow:0 8px 32px rgba(0,0,0,0.55);--r:12px;
@@ -23,7 +23,7 @@
   --cw-white:#ffffff;--cw-black:#111;--cw-line:#111;
   --cw-ink:#0a0a0a;--cw-blue:#c5daff;--cw-yellow:#f7da21;
   --cw-ok:#a8f0c6;--cw-bad:#ffc8c8;--cw-pencil:#e0e7ff;
-  --cw-rev:#fde68a;--cw-num:#1e3a5f;--cw-master:#d1fae5;
+  --cw-rev:#fde68a;--cw-num:#0a2540;--cw-master:#d1fae5;
   /* Responsive cell */
   --csz:clamp(28px,5.5vw,48px);--cgap:2px;
   --cnf:clamp(7px,1.2vw,10px);--cvf:clamp(12px,2.5vw,18px);
@@ -313,10 +313,15 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 .keypad .kdi{color:var(--accent);border-color:rgba(52,211,153,.2);font-weight:600;}
 .keypad .kutil{color:var(--accent2);}
 
+/* ── accessibility: visible keyboard focus (WCAG 2.4.7) ── */
+*:focus-visible{outline:3px solid var(--accent2);outline-offset:2px;border-radius:3px;}
+.sq.live:focus-visible{outline-offset:-3px;}
+/* ── autocheck non-colour cue (WCAG 1.4.1): glyph, not colour alone ── */
+.sq.live.ok::after{content:"✓";position:absolute;bottom:0;right:2px;font-size:9px;line-height:1;color:#076f3e;}
+.sq.live.bad::after{content:"✗";position:absolute;bottom:0;right:2px;font-size:9px;line-height:1;color:#b91c1c;}
+
 /* ── animations ── */
 @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}80%{transform:translateX(2px);}}
-@keyframes popIn{0%{transform:scale(.8);opacity:0;}100%{transform:scale(1);opacity:1;}}
-.sq.live.just-solved{animation:popIn .2s ease;}
 </style>
 </head>
 <body>
@@ -1096,13 +1101,13 @@ const LEVEL_PRESETS={
 };
 const GameConfig={
   timerMode:"up",countdownMins:5,wordTarget:8,complexity:"medium",learnMode:false,
-  load(){try{const s=localStorage.getItem(CFGKEY);if(s)Object.assign(this,JSON.parse(s));}catch(e){}return this;},
+  load(){try{const d=JSON.parse(localStorage.getItem(CFGKEY)||"{}");["timerMode","countdownMins","wordTarget","complexity","learnMode"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
   save(){try{localStorage.setItem(CFGKEY,JSON.stringify({timerMode:this.timerMode,countdownMins:this.countdownMins,wordTarget:this.wordTarget,complexity:this.complexity,learnMode:this.learnMode}));}catch(e){}}
 };
 GameConfig.load();
 const Profile={
   name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],
-  load(){try{const s=localStorage.getItem(PROFKEY);if(s)Object.assign(this,JSON.parse(s));}catch(e){}return this;},
+  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
   save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20)}));}catch(e){}},
   recordSolve(secs,clean,lang,cx){
     this.totalSolved++;
@@ -1122,6 +1127,7 @@ let autochecking=false,pencilMode=false,timerOn=true;
 let timerSec=0,timerInterval=null,cleanSolve=true;
 let hintsUsed=0,learnMastery=new Map(),learnStudyPhase=false;
 let pending="",renderTimer=null;
+let gameOver=false; // set on countdown timeout; prevents a timed-out puzzle being recorded as a solve
 let activeCat="all"; // current category filter
 let dailyMode=false; // playing the daily puzzle
 
@@ -1156,6 +1162,8 @@ function newPuzzle(langName,forceDaily=false){
   /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
   const seed=forceDaily?dailySeed():null;
   puzzle=generateBest(words,lang,GameConfig.wordTarget,rules.maxLen,forceDaily?10:14,seed);
+  /* Guard: empty generation would make bounds Infinity and freeze render() */
+  if(!puzzle||!puzzle.cells.size){setStatus("Couldn't build a puzzle — try a different category or fewer words.","err");return;}
   /* Set grid bounds from placed cells */
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
@@ -1166,7 +1174,7 @@ function newPuzzle(langName,forceDaily=false){
     guesses.set(k,"");learnMastery.set(k,0);
     if(GameConfig.learnMode&&learnStudyPhase)guesses.set(k,puzzle.cells.get(k));
   }
-  active=null;pending="";cleanSolve=true;
+  active=null;pending="";cleanSolve=true;gameOver=false;
   autochecking=rules.autoCheckDefault;
   document.getElementById("cbAuto").checked=autochecking;
   document.getElementById("lblAuto").classList.toggle("on",autochecking);
@@ -1220,7 +1228,7 @@ function render(){
     }
   }
   board.innerHTML=html;
-  board.querySelectorAll(".live").forEach(el=>el.addEventListener("click",()=>onCellClick(el.dataset.k)));
+  /* click handling is delegated once at boot (see board listener) — no per-render rebinding */
   if(ack){const el=board.querySelector(`[data-k="${ack}"]`);if(el)el.focus({preventScroll:true});}
 }
 
@@ -1298,6 +1306,14 @@ function checkManual(){
   if(wrong)setStatus(`${wrong} error${wrong>1?"s":""} — keep going.`,"err");
   else setStatus("All filled cells correct ✓","info");
   render();
+  /* Flash wrong cells red for 1.2s even when autocheck is off (users expect Check to mark errors) */
+  if(wrong&&!autochecking){
+    document.querySelectorAll("#board .sq.live").forEach(el=>{
+      const v=guesses.get(el.dataset.k);
+      if(v&&v!==puzzle.cells.get(el.dataset.k))el.classList.add("bad");
+    });
+    setTimeout(()=>{if(!autochecking)document.querySelectorAll("#board .sq.live.bad").forEach(el=>el.classList.remove("bad"));},1200);
+  }
 }
 function hintAllowed(){const r=COMPLEXITY_RULES[GameConfig.complexity];if(hintsUsed>=r.hintBudget){setStatus(`No hints left on ${r.label} difficulty.`,"err");return false;}return true;}
 function revealLetter(){if(!active){setStatus("Select a cell.");return;}if(!hintAllowed())return;const k=wordKeys(active.placement)[active.idx];guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);hintsUsed++;cleanSolve=false;updateHintBudgetBadge();advance(1);schedRender();}
@@ -1308,6 +1324,7 @@ function revealPuzzle(){for(const k of guesses.keys()){guesses.set(k,puzzle.cell
    10. WIN
    ============================================================ */
 function onWin(){
+  if(gameOver){render();syncClues();return;} // timed-out: puzzle revealed, not a real solve — don't record
   stopTimer();updateProgress();
   const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
   Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity);updateProfile();
@@ -1321,7 +1338,7 @@ function onWin(){
    11. TIMER
    ============================================================ */
 function resetTimer(){timerSec=GameConfig.timerMode==="down"?GameConfig.countdownMins*60:0;stopTimer();tick();document.getElementById("timer").classList.remove("warn","danger");}
-function startTimer(){if(!timerOn||GameConfig.timerMode==="off")return;timerInterval=setInterval(()=>{if(GameConfig.timerMode==="down"){timerSec--;if(timerSec<=0){timerSec=0;tick();stopTimer();revealPuzzle();setStatus("⏰ Time's up!","err");return;}}else timerSec++;tick();},1000);}
+function startTimer(){if(!timerOn||GameConfig.timerMode==="off")return;timerInterval=setInterval(()=>{if(GameConfig.timerMode==="down"){timerSec--;if(timerSec<=0){timerSec=0;tick();stopTimer();gameOver=true;revealPuzzle();setStatus("⏰ Time's up — puzzle revealed.","err");return;}}else timerSec++;tick();},1000);}
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
 function tick(){
   const el=document.getElementById("timer");
@@ -1497,6 +1514,8 @@ sel.addEventListener("change",()=>newPuzzle(sel.value));
 /* PWA service worker */
 if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(()=>{});}
 /* Boot */
+/* Delegated board click listener — bound once, survives every re-render */
+document.getElementById("board").addEventListener("click",e=>{const el=e.target.closest(".live");if(el&&!gameOver)onCellClick(el.dataset.k);});
 renderCatStrip();updateProfile();newPuzzle("Shona");
 </script>
 </body>
