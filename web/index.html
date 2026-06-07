@@ -260,6 +260,90 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 .keypad .kdi{color:var(--accent);border-color:rgba(52,211,153,.25);font-weight:600;}
 .keypad .kutil{color:var(--accent2);border-color:rgba(129,140,248,.25);}
 
+/* ══════════════════════════════════════════════════════════════
+   LEARN LANGUAGE MODE
+══════════════════════════════════════════════════════════════ */
+/* Vocab card — shows above grid when in learn mode */
+.vocab-card{
+  width:100%;max-width:1100px;
+  background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(129,140,248,.12));
+  border:1px solid rgba(52,211,153,.3);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:10px;display:none;
+  grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+}
+.vocab-card.visible{display:grid;}
+.vc-word{font-size:1.6rem;font-weight:800;letter-spacing:-1px;color:var(--ink);}
+.vc-phonetic{font-size:.8rem;color:var(--muted);margin-top:2px;letter-spacing:.5px;}
+.vc-body{display:flex;flex-direction:column;gap:2px;}
+.vc-en{font-size:1.05rem;color:var(--accent);font-weight:600;}
+.vc-native{font-size:.85rem;color:var(--muted);line-height:1.35;}
+.vc-stage{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;
+}
+.vc-dots{display:flex;gap:4px;}
+.vc-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--surface2);
+  transition:background .3s;
+}
+.vc-dot.lit{background:var(--accent);}
+
+/* Learn mode badge in toolbar */
+.learn-badge{
+  display:none;background:rgba(52,211,153,.18);color:var(--accent);
+  border:1px solid rgba(52,211,153,.4);border-radius:6px;
+  padding:2px 8px;font-size:.75rem;font-weight:700;letter-spacing:.5px;
+}
+.learn-mode .learn-badge{display:inline-block;}
+
+/* In learn mode, "study" cells show answer lightly so player can read */
+.learn-mode .sq.live.study-reveal .lv{
+  color:#9ca3af;font-style:normal;font-weight:400;
+}
+/* Mastered cells get a subtle green tint */
+.sq.live.mastered{background:#d1fae5 !important;}
+.sq.live.mastered .lv{color:#065f46;}
+
+/* Learn mode level preset buttons (in settings) */
+.level-presets{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.lp-btn{
+  font:inherit;cursor:pointer;text-align:left;
+  background:var(--surface2);border:1px solid var(--border2);
+  padding:10px 14px;border-radius:10px;
+  transition:border-color .15s,background .15s;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.lp-btn:hover{border-color:var(--accent);}
+.lp-btn b{font-size:.88rem;display:block;margin-bottom:2px;}
+.lp-btn small{color:var(--muted);font-size:.76rem;}
+.lp-badge{
+  font-size:.7rem;padding:2px 7px;border-radius:10px;font-weight:700;
+  white-space:nowrap;
+}
+.lp-badge.b{background:rgba(52,211,153,.2);color:var(--accent);}
+.lp-badge.i{background:rgba(129,140,248,.2);color:var(--accent2);}
+.lp-badge.a{background:rgba(239,68,68,.2);color:var(--bad);}
+
+/* Learn mode toggle section in settings */
+.sd-toggle-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;
+}
+.sd-toggle{
+  position:relative;width:44px;height:24px;cursor:pointer;
+}
+.sd-toggle input{opacity:0;width:0;height:0;}
+.sd-toggle-track{
+  position:absolute;inset:0;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border2);transition:background .2s;
+}
+.sd-toggle input:checked~.sd-toggle-track{background:var(--accent);border-color:var(--accent);}
+.sd-toggle-thumb{
+  position:absolute;top:3px;left:3px;width:18px;height:18px;
+  border-radius:50%;background:#fff;transition:transform .2s;
+}
+.sd-toggle input:checked~.sd-toggle-thumb{transform:translateX(20px);}
+
 /* ── animations ── */
 @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}}
 .sq.live.bad{animation:shake .25s ease .15s;}
@@ -359,6 +443,7 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
     <h1>Mhanga</h1>
     <span class="brand-sub">grapheme-aware crossword · Bantu languages</span>
     <span class="pencil-badge" id="pencilBadge">✏ PENCIL</span>
+    <span class="learn-badge" id="learnBadge">📚 LEARN MODE</span>
   </div>
   <div class="toolbar" role="toolbar" aria-label="Puzzle controls">
     <select id="lang" aria-label="Language"></select>
@@ -403,6 +488,25 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
       🔥 <span id="streakCount">0</span>
     </div>
     <span id="timer">00:00</span>
+  </div>
+</div>
+
+<!-- Vocab card — visible in Learn Mode only; shows word, phonetic, English meaning -->
+<div class="vocab-card" id="vocabCard" aria-live="polite" aria-label="Vocabulary card">
+  <div class="vc-body">
+    <div class="vc-word" id="vcWord"></div>
+    <div class="vc-phonetic" id="vcPhonetic"></div>
+  </div>
+  <div class="vc-body" style="flex:1">
+    <div class="vc-en" id="vcEn"></div>
+    <div class="vc-native" id="vcNative"></div>
+  </div>
+  <div class="vc-stage">
+    <div class="vc-dots" id="vcDots"></div>
+    <span id="vcStageLabel">studying</span>
+    <button id="btnPractice" onclick="enterPracticePhase()" style="margin-top:6px;font:inherit;font-size:.72rem;cursor:pointer;background:var(--accent);color:#111;border:none;border-radius:6px;padding:4px 10px;font-weight:700;display:none;">
+      ▶ Practice
+    </button>
   </div>
 </div>
 
@@ -508,6 +612,50 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
     </div>
   </div>
 
+  <!-- D. Learn Mode -->
+  <div class="sd-section">
+    <h3>📚 Learn Mode</h3>
+    <div class="sd-toggle-row">
+      <span style="font-size:.85rem">Enable Learn Mode</span>
+      <label class="sd-toggle" title="Toggle language learning mode">
+        <input type="checkbox" id="cbLearnMode" aria-label="Learn mode toggle"/>
+        <div class="sd-toggle-track"></div>
+        <div class="sd-toggle-thumb"></div>
+      </label>
+    </div>
+    <div style="font-size:.78rem;color:var(--dim);line-height:1.5;margin-bottom:12px;">
+      Shows each word with its English meaning and pronunciation. Grid starts revealed — fill words from memory to master them.
+    </div>
+  </div>
+
+  <!-- E. Level Presets (quick-apply) -->
+  <div class="sd-section">
+    <h3>🎯 Level Presets</h3>
+    <div class="level-presets">
+      <button class="lp-btn" id="lpBeginner">
+        <div>
+          <b>Beginner</b>
+          <small>4 words · short words · unlimited hints · autocheck on · learn mode on</small>
+        </div>
+        <span class="lp-badge b">BEGINNER</span>
+      </button>
+      <button class="lp-btn" id="lpIntermediate">
+        <div>
+          <b>Intermediate</b>
+          <small>7 words · all lengths · standard hints · optional autocheck</small>
+        </div>
+        <span class="lp-badge i">INTERMEDIATE</span>
+      </button>
+      <button class="lp-btn" id="lpAdvanced">
+        <div>
+          <b>Advanced</b>
+          <small>12 words · long words · 1 hint · countdown 8 min · no autocheck</small>
+        </div>
+        <span class="lp-badge a">ADVANCED</span>
+      </button>
+    </div>
+  </div>
+
   <button class="sd-apply" id="sdApply">Apply &amp; New Puzzle</button>
 </aside>
 
@@ -516,6 +664,11 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 /* ============================================================
    1. LANGUAGE DATA
    ============================================================ */
+/*
+ * Word format: [answer, clue_in_language, english_translation, phonetic_hint]
+ * english_translation powers Learn Mode bilingual clues.
+ * phonetic_hint shows how to say the word (grapheme-by-grapheme for learners).
+ */
 const LANGUAGES={
   Shona:{
     config:{
@@ -524,18 +677,24 @@ const LANGUAGES={
       ignore_casing:true,strip_diacritics:false,preserve_marks:[]
     },
     words:[
-      ["chikoro","Nzvimbo inodzidzirwa vana (school)"],
-      ["shamwari","Munhu waunoda uye waunovimba naye (friend)"],
-      ["ngoma","Chiridzwa chinorohwa (drum)"],
-      ["mbira","Chiridzwa cheChiShona chine simbi (thumb piano)"],
-      ["nyika","Pasi rinogarwa nevanhu (country / land)"],
-      ["svondo","Mazuva manomwe (week / Sunday)"],
-      ["zvombo","Zvinhu zvinoshandiswa kurwa (weapons / tools)"],
-      ["ndima","Chikamu chebasa rekurima (portion of field)"],
-      ["tsanga","Tsanga yembeu (grain / seed)"],
-      ["amai","Mubereki wechikadzi (mother)"],
-      ["baba","Mubereki wechirume (father)"],
-      ["nzira","Penzira inofambwa (path / road)"]
+      ["chikoro", "Nzvimbo inodzidzirwa vana",        "school",          "chi·ko·ro"],
+      ["shamwari","Munhu waunoda uye waunovimba naye","friend / companion","sha·mwa·ri"],
+      ["ngoma",   "Chiridzwa chinorohwa",              "drum",            "ngo·ma"],
+      ["mbira",   "Chiridzwa chine simbi (thumb piano)","thumb piano",    "mbi·ra"],
+      ["nyika",   "Pasi rinogarwa nevanhu",            "country / land",  "nyi·ka"],
+      ["svondo",  "Mazuva manomwe / zuva reSvondo",    "week / Sunday",   "svo·ndo"],
+      ["zvombo",  "Zvinhu zvinoshandiswa",             "tools / weapons", "zvo·mbo"],
+      ["ndima",   "Chikamu chebasa rekurima",          "field / portion", "ndi·ma"],
+      ["tsanga",  "Mbeu yezvirimwa",                   "grain / seed",    "tsa·nga"],
+      ["amai",    "Mubereki wechikadzi",               "mother",          "a·mai"],
+      ["baba",    "Mubereki wechirume",                "father",          "ba·ba"],
+      ["nzira",   "Nzira inofambwa",                   "path / road",     "nzi·ra"],
+      ["mvura",   "Zvinomwa nevanhu nezvipenyu",       "water / rain",    "mvu·ra"],
+      ["rudo",    "Manzwiro akanaka kune mumwe",       "love",            "ru·do"],
+      ["mwana",   "Mwana womunhu",                     "child",           "mwa·na"],
+      ["nyama",   "Chokudya chinobva kumhuka",         "meat",            "nya·ma"],
+      ["zuva",    "Zuva rinoshvika zuva nezuva",       "sun / day",       "zu·va"],
+      ["moto",    "Moto unopisa",                      "fire",            "mo·to"]
     ]
   },
   Swahili:{
@@ -545,18 +704,24 @@ const LANGUAGES={
       ignore_casing:true,strip_diacritics:true,preserve_marks:["'"]
     },
     words:[
-      ["shule","Mahali wanafunzi husoma (school)"],
-      ["chakula","Kitu tunachokula (food)"],
-      ["ng'ombe","Mnyama anayetoa maziwa (cow)"],
-      ["ghali","Chenye bei kubwa (expensive)"],
-      ["rafiki","Mtu unayempenda na kumwamini (friend)"],
-      ["ndege","Husafiri angani (bird / aeroplane)"],
-      ["thelathini","Idadi baada ya ishirini na tisa (thirty)"],
-      ["shamba","Mahali pa kulima (farm / field)"],
-      ["nyumba","Mahali pa kuishi (house)"],
-      ["mbingu","Anga la juu (sky / heaven)"],
-      ["dhahabu","Madini ya thamani (gold)"],
-      ["chai","Kinywaji cha moto (tea)"]
+      ["shule",     "Mahali wanafunzi husoma",          "school",          "shu·le"],
+      ["chakula",   "Kitu tunachokula",                 "food",            "cha·ku·la"],
+      ["ng'ombe",   "Mnyama anayetoa maziwa",           "cow",             "ng'o·mbe"],
+      ["ghali",     "Chenye bei kubwa",                 "expensive",       "gha·li"],
+      ["rafiki",    "Mtu unayempenda na kumwamini",     "friend",          "ra·fi·ki"],
+      ["ndege",     "Husafiri angani",                  "bird / aeroplane","nde·ge"],
+      ["thelathini","Idadi baada ya ishirini na tisa",  "thirty",          "the·la·thi·ni"],
+      ["shamba",    "Mahali pa kulima",                 "farm / field",    "sha·mba"],
+      ["nyumba",    "Mahali pa kuishi",                 "house",           "nyu·mba"],
+      ["mbingu",    "Anga la juu",                      "sky / heaven",    "mbi·ngu"],
+      ["dhahabu",   "Madini ya thamani ya rangi ya dhahabu","gold",        "dha·ha·bu"],
+      ["chai",      "Kinywaji cha moto",                "tea",             "chai"],
+      ["maji",      "Kiowevu cha kunywa",               "water",           "ma·ji"],
+      ["upendo",    "Hisia ya moyo kwa mtu",            "love",            "u·pe·ndo"],
+      ["mtoto",     "Mtu mdogo / mwana",                "child",           "mto·to"],
+      ["nyama",     "Chakula kinachotoka kwa wanyama",  "meat",            "nya·ma"],
+      ["jua",       "Nyota inayotoa mwanga na joto",    "sun",             "ju·a"],
+      ["moto",      "Kitu kinachowaka na kutoa joto",   "fire",            "mo·to"]
     ]
   }
 };
@@ -700,6 +865,7 @@ const GameConfig={
   countdownMins:5,      // used when timerMode==="down"
   wordTarget:8,         // 4–12
   complexity:"medium",
+  learnMode:false,      // language-learning mode
 
   load(){
     try{const s=localStorage.getItem(CONFIG_KEY);if(s)Object.assign(this,JSON.parse(s));}
@@ -709,9 +875,16 @@ const GameConfig={
   save(){
     try{localStorage.setItem(CONFIG_KEY,JSON.stringify({
       timerMode:this.timerMode,countdownMins:this.countdownMins,
-      wordTarget:this.wordTarget,complexity:this.complexity
+      wordTarget:this.wordTarget,complexity:this.complexity,learnMode:this.learnMode
     }));}catch(e){}
   }
+};
+
+/* ── Level preset definitions ── */
+const LEVEL_PRESETS={
+  beginner:    {complexity:"easy",  wordTarget:4, timerMode:"off",  countdownMins:5,  learnMode:true},
+  intermediate:{complexity:"medium",wordTarget:7, timerMode:"up",   countdownMins:5,  learnMode:false},
+  advanced:    {complexity:"hard",  wordTarget:12,timerMode:"down", countdownMins:8,  learnMode:false}
 };
 GameConfig.load();
 
@@ -724,6 +897,10 @@ let timerSec=0,timerInterval=null,cleanSolve=true,streak=0;
 let hintsUsed=0;        // resets each puzzle; enforces hintBudget
 let pending="";         // IME compose buffer
 let renderTimer=null;   // debounce handle
+
+/* ── Learn Mode state ── */
+let learnMastery=new Map(); // cellKey → attempts correct (0-3 = mastered)
+let learnStudyPhase=true;   // true = study (grid revealed), false = practice
 
 function shuffle(a){
   a=a.slice();
@@ -741,8 +918,14 @@ function newPuzzle(langName){
   puzzle=generate(shuffle(data.words),lang,0,GameConfig.wordTarget,rules.maxLen);
 
   guesses=new Map();pencilSet=new Set();revealed=new Set();
-  hintsUsed=0;
-  for(const k of puzzle.cells.keys())guesses.set(k,"");
+  hintsUsed=0;learnMastery=new Map();learnStudyPhase=GameConfig.learnMode;
+  for(const k of puzzle.cells.keys()){
+    guesses.set(k,"");learnMastery.set(k,0);
+    /* In learn mode study phase: pre-fill grid so player can read words */
+    if(GameConfig.learnMode&&learnStudyPhase){
+      guesses.set(k,puzzle.cells.get(k));
+    }
+  }
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
   bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
@@ -763,13 +946,19 @@ function newPuzzle(langName){
   badge.textContent=rules.label;
   badge.className="cx-badge "+GameConfig.complexity;
 
+  /* Learn mode UI */
+  document.body.classList.toggle("learn-mode",GameConfig.learnMode);
+  document.getElementById("vocabCard").classList.toggle("visible",GameConfig.learnMode);
+
   /* Update hint-budget badge */
   updateHintBudgetBadge();
   updateProgress();
 
   const placed=puzzle.placements.length,target=GameConfig.wordTarget;
-  setStatus(`${placed} word${placed!==1?"s":""} placed (target: ${target}) · ${rules.label} · select a square to begin`,"info");
+  const learnTag=GameConfig.learnMode?(learnStudyPhase?" · 📖 Study phase":" · ✍ Practice phase"):"";
+  setStatus(`${placed} word${placed!==1?"s":""} placed (target: ${target}) · ${rules.label}${learnTag}  · select a square to begin`,"info");
   render();renderClues();renderKeypad();updateClueBar();
+  if(GameConfig.learnMode) updateVocabCard();
 }
 
 function updateHintBudgetBadge(){
@@ -778,6 +967,51 @@ function updateHintBudgetBadge(){
   if(rules.hintBudget===Infinity){el.textContent="";return;}
   const left=Math.max(0,rules.hintBudget-hintsUsed);
   el.textContent=`${left} hint${left!==1?"s":""} left`;
+}
+
+/* ── Learn Mode helpers ── */
+function updateVocabCard(){
+  if(!GameConfig.learnMode||!active){return;}
+  const p=active.placement;
+  /* word data format: [answer, clue, english, phonetic] */
+  const wd=p.e;
+  const en=wd[2]||"";
+  const phonetic=wd[3]||"";
+  document.getElementById("vcWord").textContent=wd[0].toUpperCase();
+  document.getElementById("vcPhonetic").textContent=phonetic?`/${phonetic}/`:"";
+  document.getElementById("vcEn").textContent=en;
+  document.getElementById("vcNative").textContent=wd[1];
+
+  /* Mastery dots: 3 dots per word, lit = correct attempts */
+  const keys=wordKeys(p);
+  const correct=keys.filter(k=>learnMastery.get(k)>0).length;
+  const total=keys.length;
+  const pct=Math.round(correct/total*100);
+  const dots=document.getElementById("vcDots");
+  /* Show 3 milestone dots: 33%, 66%, 100% */
+  dots.innerHTML=[33,66,100].map(m=>`<div class="vc-dot${pct>=m?" lit":""}"></div>`).join("");
+
+  const stage=learnStudyPhase?"📖 Study":"✍ Practice";
+  const label=pct===100?"✅ Mastered!":stage;
+  document.getElementById("vcStageLabel").textContent=label;
+  document.getElementById("btnPractice").style.display=learnStudyPhase?"block":"none";
+}
+
+function enterPracticePhase(){
+  /* Transition from study to practice: clear all guesses so player fills from memory */
+  learnStudyPhase=false;
+  for(const k of guesses.keys())guesses.set(k,"");
+  active=null;pending="";
+  setStatus("📚 Practice phase — fill the words from memory!","info");
+  render();renderClues();updateClueBar();updateVocabCard();
+}
+
+function trackLearnMastery(placementP){
+  if(!GameConfig.learnMode||learnStudyPhase)return;
+  const keys=wordKeys(placementP);
+  if(isSolved(placementP)){
+    keys.forEach(k=>learnMastery.set(k,(learnMastery.get(k)||0)+1));
+  }
 }
 
 function wordKeys(p){
@@ -822,6 +1056,11 @@ function render(){
       const isRev=revealed.has(k);
       if(isCur)cl.push("cur");
       else if(inWd)cl.push("wd");
+      /* Learn mode: mastered cells get green tint; study phase cells show answer lightly */
+      if(GameConfig.learnMode){
+        if((learnMastery.get(k)||0)>=2&&!isCur&&!inWd)cl.push("mastered");
+        else if(learnStudyPhase&&!isCur)cl.push("study-reveal");
+      }
       if(pencilSet.has(k)&&g&&!isCur&&!inWd)cl.push("pnc");
       if(autochecking&&g&&!isRev){
         if(g===puzzle.cells.get(k)){if(!isCur&&!inWd)cl.push("ok");}
@@ -923,6 +1162,7 @@ function onCellClick(k){
   const idx=wordKeys(chosen).indexOf(k);
   active={placement:chosen,idx};pending="";
   render();syncClueHighlight();updateClueBar();
+  if(GameConfig.learnMode)updateVocabCard();
 }
 
 function advance(n=1){
@@ -989,7 +1229,11 @@ function schedRender(){
     updateProgress();
     if(autochecking){}  // styles applied in render()
     if(allSolved())onWin();
-    else{render();syncClueHighlight();updateClueBar();}
+    else{
+      if(active)trackLearnMastery(active.placement);
+      render();syncClueHighlight();updateClueBar();
+      if(GameConfig.learnMode)updateVocabCard();
+    }
   },60);
 }
 
@@ -1222,7 +1466,10 @@ function openSettings(){
   document.getElementById("wordCountSlider").value=GameConfig.wordTarget;
   document.getElementById("wordCountVal").textContent=GameConfig.wordTarget;
   document.querySelector(`input[name=complexity][value="${GameConfig.complexity}"]`).checked=true;
-  document.getElementById("sdHintDesc").textContent=HINT_DESCS[GameConfig.complexity];
+  document.getElementById("cbLearnMode").checked=GameConfig.learnMode;
+  document.getElementById("sdHintDesc").textContent=GameConfig.learnMode
+    ?"Learn mode: study words first, then practice from memory."
+    :HINT_DESCS[GameConfig.complexity];
   document.getElementById("settingsDrawer").classList.add("open");
   document.getElementById("sdBackdrop").classList.add("open");
   document.getElementById("sdClose").focus();
@@ -1238,6 +1485,7 @@ function readSettingsFromUI(){
   GameConfig.countdownMins=Math.max(1,Math.min(60,parseInt(document.getElementById("countdownMins").value)||5));
   GameConfig.wordTarget=parseInt(document.getElementById("wordCountSlider").value)||8;
   GameConfig.complexity=document.querySelector("input[name=complexity]:checked")?.value||"medium";
+  GameConfig.learnMode=document.getElementById("cbLearnMode").checked;
   GameConfig.save();
 }
 
@@ -1261,6 +1509,25 @@ document.getElementById("wordCountSlider").addEventListener("input",function(){
 document.querySelectorAll("input[name=complexity]").forEach(r=>r.addEventListener("change",()=>{
   document.getElementById("sdHintDesc").textContent=HINT_DESCS[r.value]||"";
 }));
+
+/* Learn Mode toggle */
+document.getElementById("cbLearnMode").addEventListener("change",function(){
+  const desc=document.getElementById("sdHintDesc");
+  if(this.checked){desc.textContent="Learn mode: study words first, then practice from memory.";}
+  else{desc.textContent=HINT_DESCS[document.querySelector("input[name=complexity]:checked")?.value||"medium"];}
+});
+
+/* Level presets — click to apply full config and close */
+function applyPreset(name){
+  const p=LEVEL_PRESETS[name];
+  Object.assign(GameConfig,p);
+  GameConfig.save();
+  closeSettings();
+  newPuzzle(document.getElementById("lang").value);
+}
+document.getElementById("lpBeginner").addEventListener("click",()=>applyPreset("beginner"));
+document.getElementById("lpIntermediate").addEventListener("click",()=>applyPreset("intermediate"));
+document.getElementById("lpAdvanced").addEventListener("click",()=>applyPreset("advanced"));
 
 /* Apply & New Puzzle */
 document.getElementById("sdApply").addEventListener("click",()=>{
