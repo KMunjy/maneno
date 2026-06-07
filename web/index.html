@@ -158,15 +158,18 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 /* ══ CROSSWORD TABLE ════════════════════════════════════════ */
 .board-wrap{
   background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:12px;box-shadow:var(--shadow);
+  border-radius:var(--r);padding:14px;box-shadow:var(--shadow);
   overflow:auto;align-self:start;
+  text-align:center;            /* Option 2: centre the framed grid */
 }
 #board{
   display:inline-grid;
   gap:var(--cgap);
   background:var(--cw-line);
-  border:var(--cgap) solid var(--cw-line);
-  border-radius:3px;
+  /* Option 2 — Classic Frame: solid black outer border like newspaper crosswords */
+  border:3px solid var(--cw-black);
+  border-radius:2px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.35);
 }
 .sq{width:var(--csz);height:var(--csz);position:relative;}
 .sq.blk{background:var(--cw-black);}
@@ -816,7 +819,7 @@ class Language{
    3. GENERATOR — greedy crossing + retry
    ============================================================ */
 const AC="across",DN="down";
-function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99){
+function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null){
   const pool=entries.map(e=>({e,t:lang.tokenize(e[0])})).filter(x=>x.t.length&&x.t.length<=maxLen);
   const sorted=pool.slice().sort((a,b)=>b.t.length-a.t.length);
   const cands=maxLen<=5?sorted.slice().reverse().slice(0,wordTarget*2):sorted.slice(0,wordTarget*2);
@@ -845,10 +848,42 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99){
   commit({e:toks[0].e,tok:toks[0].t,row:0,col:0,dir:AC});
   let rem=toks.slice(1),progress=true;
   while(rem.length&&progress){progress=false;const left=[];for(const{e,t}of rem){const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
-  if(placements.length<Math.min(4,wordTarget)&&attempt<6)return generate(shuffle(entries),lang,attempt+1,wordTarget,maxLen);
+  if(placements.length<Math.min(4,wordTarget)&&attempt<6){
+    const reshuffled=seed==null?shuffle(entries):seededShuffle(entries,seed+attempt+1);
+    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed);
+  }
   const starts=new Map();for(const p of placements){const k=K(p.row,p.col);if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
   [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;}).forEach((k,i)=>starts.get(k).forEach(p=>p.num=i+1));
   return{cells,placements};
+}
+
+/* Bounding box + fill metrics for a generated puzzle */
+function bboxOf(cells){
+  const rs=[...cells.keys()].map(k=>+k.split(",")[0]);
+  const cs=[...cells.keys()].map(k=>+k.split(",")[1]);
+  const rows=Math.max(...rs)-Math.min(...rs)+1,cols=Math.max(...cs)-Math.min(...cs)+1;
+  return{rows,cols,area:rows*cols};
+}
+/*
+ * OPTION 1 — Dense Pack: run generate() N times and keep the densest, most
+ * square, most word-rich layout. Score rewards: more words, higher white-cell
+ * fill ratio, and an aspect ratio closer to square (like a real crossword).
+ * Deterministic when `seed` is supplied (used by the Daily puzzle).
+ */
+function generateBest(entries,lang,wordTarget,maxLen,tries=14,seed=null){
+  let best=null,bestScore=-Infinity;
+  for(let i=0;i<tries;i++){
+    const order=seed==null?shuffle(entries):seededShuffle(entries,seed+i*7919);
+    const sd=seed==null?null:seed+i*7919;
+    const p=generate(order,lang,0,wordTarget,maxLen,sd);
+    if(!p.cells.size)continue;
+    const bb=bboxOf(p.cells);
+    const fill=p.cells.size/Math.max(1,bb.area);          // density: white cells / rectangle
+    const aspect=Math.min(bb.rows,bb.cols)/Math.max(1,Math.max(bb.rows,bb.cols)); // 1 = square
+    const score=p.placements.length + fill*12 + aspect*4; // words, then density, then squareness
+    if(score>bestScore){bestScore=score;best=p;}
+  }
+  return best||generate(entries,lang,0,wordTarget,maxLen,seed);
 }
 
 /* ============================================================
@@ -908,11 +943,11 @@ function seededShuffle(arr,seed){
   return arr;
 }
 
-/* ── Word list filtered by category ── */
-function wordsForPuzzle(data,cat,isDaily){
+/* ── Category-filtered word list (ordering handled by generateBest) ── */
+function wordsForPuzzle(data,cat){
   let words=cat==="all"?data.words:data.words.filter(w=>w[4]===cat);
-  if(!words.length)words=data.words;
-  return isDaily?seededShuffle(words,dailySeed()):shuffle(words);
+  if(words.length<4)words=data.words; // ensure enough words to fill a dense grid
+  return words;
 }
 
 /* ============================================================
@@ -923,8 +958,10 @@ function newPuzzle(langName,forceDaily=false){
   lang=new Language(data.config);
   const rules=COMPLEXITY_RULES[GameConfig.complexity];
   dailyMode=forceDaily;
-  const words=wordsForPuzzle(data,activeCat,forceDaily);
-  puzzle=generate(words,lang,0,GameConfig.wordTarget,rules.maxLen);
+  const words=wordsForPuzzle(data,activeCat);
+  /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
+  const seed=forceDaily?dailySeed():null;
+  puzzle=generateBest(words,lang,GameConfig.wordTarget,rules.maxLen,forceDaily?10:14,seed);
   /* Set grid bounds from placed cells */
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
