@@ -1,250 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Mhanga · Bantu Crossword</title>
-<meta name="description" content="A grapheme-aware crossword puzzle for Bantu languages — digraphs like ng', zv and ch each fill a single cell." />
+<meta name="description" content="Grapheme-aware crossword for Bantu languages — digraphs like ng', zv, ch fill a single cell."/>
 <style>
-/* ── tokens ── */
-:root {
-  --bg:           #0f1117;
-  --bg2:          #161b27;
-  --surface:      #1e2535;
-  --surface2:     #252d40;
-  --border:       rgba(255,255,255,0.08);
-  --border2:      rgba(255,255,255,0.14);
-  --ink:          #e8eef8;
-  --muted:        #7a8aaa;
-  --dim:          #4a5570;
+/* ── design tokens ── */
+:root{
+  --bg:#111827;--bg2:#1f2937;--surface:#1f2937;--surface2:#374151;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --ink:#f3f4f6;--muted:#9ca3af;--dim:#6b7280;
+  --accent:#34d399;--accent2:#818cf8;
+  --good:#22c55e;--bad:#ef4444;--warn:#f59e0b;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);--r:12px;
 
-  /* crossword cell palette — NYT-proven dual-tone */
-  --cell-bg:      #f0f4ff;  /* near-white live cells — max contrast against black blocks */
-  --cell-border:  #c5cfe8;
-  --cell-ink:     #0f1117;  /* dark text on light cells */
-  --cell-outer:   #0f1117;  /* block cells = true black */
-  --cell-word:    #bcd0f7;  /* light blue — active word */
-  --cell-active:  #f7d000;  /* gold yellow — active cell (NYT standard) */
-  --cell-pencil:  #d0d8ee;  /* pencil-mode entry */
+  /* ── CLASSIC CROSSWORD PALETTE ── */
+  /* Traditional black-and-white crossword table look */
+  --cw-white:   #ffffff;     /* live cells — pure white */
+  --cw-black:   #111111;     /* block cells — near-black */
+  --cw-line:    #111111;     /* grid line colour (gap colour = block colour) */
+  --cw-ink:     #111111;     /* letter colour on white cells */
+  --cw-blue:    #c5daff;     /* active-word highlight (LA Times standard) */
+  --cw-yellow:  #f7da21;     /* active-cell highlight (NYT standard) */
+  --cw-correct: #a8f0c6;     /* autocheck correct */
+  --cw-wrong:   #ffc8c8;     /* autocheck wrong */
+  --cw-pencil:  #e0e7ff;     /* pencil-mode tentative */
+  --cw-revealed:#fde68a;     /* revealed cell tint */
+  --cw-number:  #1e3a5f;     /* clue number inside cell */
 
-  --accent:       #5eead4;
-  --accent2:      #818cf8;
-  --good:         #34d399;
-  --bad:          #fb7185;
-  --warn:         #fbbf24;
-  --shadow:       0 12px 40px rgba(0,0,0,0.55);
-  --r:            14px;
+  /* Cell size — responsive via clamp */
+  --cell-sz: clamp(28px, 5.5vw, 48px);
+  --cell-gap: 2px;           /* gap between cells = creates the "table line" */
+  --num-sz: clamp(7px, 1.2vw, 10px);
+  --val-sz: clamp(12px, 2.5vw, 19px);
 }
+
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{min-height:100vh;}
 body{
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  background:var(--bg); color:var(--ink);
-  display:flex; flex-direction:column; align-items:center;
-  padding:14px 12px 180px;
+  background:var(--bg);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 10px 200px;
 }
 
 /* ── header ── */
-header{width:100%;max-width:1060px;margin-bottom:12px;}
+header{width:100%;max-width:1100px;margin-bottom:10px;}
 .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
 h1{
-  font-size:1.55rem;letter-spacing:-0.5px;font-weight:800;
+  font-size:1.5rem;letter-spacing:-0.5px;font-weight:800;
   background:linear-gradient(90deg,var(--accent),var(--accent2));
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.brand-sub{color:var(--muted);font-size:.82rem;}
-
-/* ── toolbar ── */
-.toolbar{
-  display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;
-}
-.toolbar select, .toolbar button, .toolbar label.toggle{
-  font:inherit;color:var(--ink);cursor:pointer;
-  background:var(--surface);border:1px solid var(--border2);
-  padding:8px 13px;border-radius:10px;
-  transition:background .15s,border-color .15s,transform .08s;
-  white-space:nowrap;font-size:.85rem;
-}
-.toolbar button:hover,.toolbar label.toggle:hover{border-color:var(--accent);}
-.toolbar button:active,.toolbar label.toggle:active{transform:scale(.96);}
-.toolbar button.primary{
-  background:linear-gradient(135deg,rgba(94,234,212,.2),rgba(129,140,248,.2));
-  border-color:rgba(94,234,212,.35);
-}
-.toolbar button.danger{border-color:rgba(251,113,133,.35);color:var(--bad);}
-.toolbar .sep{width:1px;height:24px;background:var(--border2);align-self:center;}
-/* pill toggles */
-.toggle-group{display:flex;gap:0;}
-.toggle-group label{
-  border-radius:0;border-right-width:0;font-size:.82rem;
-  padding:8px 11px;
-}
-.toggle-group label:first-child{border-radius:10px 0 0 10px;}
-.toggle-group label:last-child{border-radius:0 10px 10px 0;border-right-width:1px;}
-.toggle-group input{display:none;}
-.toggle-group input:checked + span{color:var(--accent);}
-label.toggle input{display:none;}
-label.toggle.active-lbl{border-color:var(--accent);color:var(--accent);}
-
-/* ── clue bar (above grid, NYT-style) ── */
-.clue-bar{
-  width:100%;max-width:1060px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:10px 16px;
-  display:flex;align-items:center;gap:12px;margin-bottom:10px;
-  min-height:46px;
-}
-.clue-bar .cb-num{
-  color:var(--accent2);font-weight:700;font-size:.9rem;min-width:36px;
-}
-.clue-bar .cb-dir{
-  color:var(--muted);font-size:.78rem;text-transform:uppercase;
-  letter-spacing:1px;min-width:48px;
-}
-.clue-bar .cb-text{
-  flex:1;font-size:.95rem;line-height:1.35;color:var(--ink);
-}
-.clue-bar .cb-len{color:var(--dim);font-size:.82rem;white-space:nowrap;}
-
-/* ── status bar ── */
-.status-bar{
-  width:100%;max-width:1060px;
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:10px;font-size:.83rem;color:var(--muted);
-  flex-wrap:wrap;gap:6px;
-}
-.status-msg.win{color:var(--good);font-weight:700;}
-.status-msg.err{color:var(--bad);}
-#timer{font-variant-numeric:tabular-nums;color:var(--muted);}
-#timer.hidden-timer{visibility:hidden;}
-
-/* ── main layout ── */
-.layout{
-  width:100%;max-width:1060px;
-  display:grid;grid-template-columns:1fr;gap:16px;
-}
-@media(min-width:820px){.layout{grid-template-columns:auto 1fr;align-items:start;}}
-
-/* ── grid ── */
-.board-wrap{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:14px;
-  box-shadow:var(--shadow);
-  overflow:auto;align-self:start;
-}
-/*
-  KEY FIX: use CSS Grid (not HTML table) so each cell has independent borders
-  that are never collapsed. Block squares blend into the outer background.
-*/
-#board{display:inline-grid;gap:3px;background:var(--cell-outer);
-       border:3px solid var(--cell-outer);border-radius:5px;}
-.cell,.block{width:48px;height:48px;position:relative;}
-.block{background:var(--cell-outer);}
-.cell{
-  background:var(--cell-bg);
-  border:1px solid var(--cell-border);
-  border-radius:2px;
-  cursor:pointer;
-  transition:background .1s;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--cell-ink);
-}
-.cell.in-word{background:var(--cell-word);}
-.cell.active{background:var(--cell-active) !important;color:#1a1000;}
-.cell.pencil-cell .val{color:#5a6e9a;font-style:italic;}
-.cell.correct .val{color:#076f3e;}
-.cell.wrong .val{color:#cc1f3a;}
-.cell.autocheck-wrong{box-shadow:inset 0 -3px 0 var(--bad);}
-
-.num{position:absolute;top:2px;left:3px;font-size:9px;color:#4a5a7a;line-height:1;pointer-events:none;font-weight:600;}
-.val{font-size:18px;font-weight:700;letter-spacing:-.5px;text-transform:uppercase;pointer-events:none;line-height:1;}
-
-/* ── clue panels ── */
-.side{display:flex;flex-direction:column;gap:14px;}
-.clue-panel{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:14px 16px;max-height:380px;overflow-y:auto;
-}
-.clue-panel h2{
-  font-size:.72rem;text-transform:uppercase;letter-spacing:1.8px;
-  color:var(--accent);margin-bottom:10px;font-weight:700;
-}
-.clue-item{
-  display:flex;gap:8px;padding:5px 7px;border-radius:8px;
-  cursor:pointer;font-size:.88rem;line-height:1.4;
-  transition:background .1s;
-}
-.clue-item:hover{background:rgba(255,255,255,0.05);}
-.clue-item.active{background:rgba(94,234,212,.1);border-left:2px solid var(--accent);padding-left:5px;}
-.clue-item.solved{color:var(--dim);}
-.clue-item .cnum{color:var(--accent2);font-weight:700;min-width:22px;font-size:.85rem;}
-.clue-item .clen{color:var(--dim);font-size:.8rem;}
-
-/* ── pencil indicator ── */
+.brand-sub{color:var(--muted);font-size:.8rem;}
 .pencil-badge{
-  display:none;background:rgba(139,163,212,.15);color:#8ba3d4;
-  border:1px solid rgba(139,163,212,.3);border-radius:6px;
-  padding:3px 9px;font-size:.78rem;font-weight:600;letter-spacing:.5px;
+  display:none;background:rgba(129,140,248,.18);color:var(--accent2);
+  border:1px solid rgba(129,140,248,.35);border-radius:6px;
+  padding:2px 8px;font-size:.75rem;font-weight:700;letter-spacing:.5px;
 }
 .pencil-mode .pencil-badge{display:inline-block;}
 
-/* ── hint / reveal modal ── */
+/* ── toolbar ── */
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+.toolbar select,.toolbar button,.toolbar label.toggle{
+  font:inherit;color:var(--ink);cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border2);
+  padding:7px 12px;border-radius:9px;font-size:.82rem;white-space:nowrap;
+  transition:border-color .15s,background .15s,transform .07s;
+}
+.toolbar button:hover,.toolbar label.toggle:hover{border-color:var(--accent);}
+.toolbar button:active{transform:scale(.96);}
+.toolbar button.primary{
+  background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(129,140,248,.18));
+  border-color:rgba(52,211,153,.4);font-weight:600;
+}
+.toolbar button.danger{border-color:rgba(239,68,68,.3);color:var(--bad);}
+.toolbar .sep{width:1px;height:22px;background:var(--border2);align-self:center;}
+label.toggle input{display:none;}
+label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(52,211,153,.1);}
+
+/* ── clue bar ── */
+.clue-bar{
+  width:100%;max-width:1100px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:9px 16px;
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;min-height:44px;
+}
+.cb-num{color:var(--accent2);font-weight:700;font-size:.88rem;min-width:30px;}
+.cb-dir{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:1px;min-width:44px;}
+.cb-text{flex:1;font-size:.92rem;line-height:1.35;}
+.cb-len{color:var(--dim);font-size:.8rem;white-space:nowrap;}
+
+/* ── status / timer row ── */
+.status-bar{
+  width:100%;max-width:1100px;
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;font-size:.8rem;color:var(--muted);flex-wrap:wrap;gap:4px;
+}
+.status-msg.win{color:var(--good);font-weight:700;}
+.status-msg.err{color:var(--bad);}
+.status-msg.info{color:var(--accent);}
+.timer-area{display:flex;align-items:center;gap:10px;}
+#timer{font-variant-numeric:tabular-nums;color:var(--muted);}
+#timer.hidden{visibility:hidden;}
+.streak{display:flex;align-items:center;gap:4px;color:var(--warn);font-size:.8rem;}
+
+/* ── progress bar ── */
+.progress-wrap{width:100%;max-width:1100px;margin-bottom:10px;}
+.progress-track{
+  height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;
+}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease;}
+
+/* ── main layout ── */
+.layout{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:820px){.layout{grid-template-columns:auto 1fr;align-items:start;}}
+
+/* ══════════════════════════════════════════════════════════════
+   CROSSWORD TABLE — pure white cells, pure black blocks,
+   classic grid-line borders. Uses CSS Grid with a black gap so
+   the gaps look like the table lines of a real crossword.
+══════════════════════════════════════════════════════════════ */
+.board-wrap{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px;
+  box-shadow:var(--shadow);overflow:auto;align-self:start;
+}
+#board{
+  display:inline-grid;
+  gap:var(--cell-gap);
+  background:var(--cw-line);       /* gap colour = black line colour */
+  border:var(--cell-gap) solid var(--cw-line); /* outer border matches */
+  padding:0;
+  border-radius:3px;
+}
+/* Every square — block or live */
+.sq{
+  width:var(--cell-sz);
+  height:var(--cell-sz);
+  position:relative;
+}
+/* Black block squares */
+.sq.blk{background:var(--cw-black);}
+/* White live squares */
+.sq.live{
+  background:var(--cw-white);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--cw-ink);
+  transition:background .08s;
+}
+/* Highlighting states — override background */
+.sq.live.wd   {background:var(--cw-blue);}   /* word highlight */
+.sq.live.cur  {background:var(--cw-yellow);}  /* active cell (cursor) */
+.sq.live.pnc  {background:var(--cw-pencil);}  /* pencil tentative */
+.sq.live.ok   {background:var(--cw-correct);} /* autocheck correct */
+.sq.live.bad  {background:var(--cw-wrong);}   /* autocheck wrong */
+.sq.live.rev  {background:var(--cw-revealed);}/* revealed tint */
+
+/* Clue number — top-left corner of cell */
+.cn{
+  position:absolute;top:1px;left:2px;
+  font-size:var(--num-sz);font-weight:700;
+  color:var(--cw-number);line-height:1;pointer-events:none;
+  user-select:none;
+}
+/* Letter value — centre of cell */
+.lv{
+  font-size:var(--val-sz);font-weight:800;
+  text-transform:uppercase;pointer-events:none;
+  line-height:1;user-select:none;
+  color:inherit;
+}
+/* Pencil letter style */
+.sq.live.pnc .lv{color:#6366f1;font-style:italic;}
+/* Wrong autocheck letter */
+.sq.live.bad .lv{color:#b91c1c;}
+/* Error underline when cell background not visible */
+.sq.live.err-line{box-shadow:inset 0 -3px 0 var(--bad);}
+
+/* Legend */
+.legend{font-size:.74rem;color:var(--dim);margin-top:8px;line-height:1.5;}
+.legend b{color:var(--muted);}
+
+/* ── clue panels ── */
+.side{display:flex;flex-direction:column;gap:12px;}
+.clue-panel{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px 14px;
+  max-height:360px;overflow-y:auto;scroll-behavior:smooth;
+}
+.clue-panel h2{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:1.8px;
+  color:var(--accent);margin-bottom:8px;font-weight:700;
+  position:sticky;top:0;background:var(--surface);padding-bottom:4px;
+}
+.ci{
+  display:flex;gap:7px;padding:5px 6px;border-radius:7px;
+  cursor:pointer;font-size:.86rem;line-height:1.35;
+  transition:background .1s;scroll-margin:80px;
+}
+.ci:hover{background:rgba(255,255,255,.05);}
+.ci.act{background:rgba(52,211,153,.1);border-left:2px solid var(--accent);padding-left:4px;}
+.ci.done{color:var(--dim);}
+.ci .cn2{color:var(--accent2);font-weight:700;min-width:20px;font-size:.82rem;flex-shrink:0;}
+.ci .cl{color:var(--dim);font-size:.78rem;}
+
+/* ── hint modal ── */
 .modal-overlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
-  z-index:200;align-items:center;justify-content:center;
-  backdrop-filter:blur(4px);
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(5px);
 }
 .modal-overlay.open{display:flex;}
 .modal{
-  background:var(--bg2);border:1px solid var(--border2);border-radius:18px;
-  padding:28px 32px;max-width:380px;width:90%;box-shadow:var(--shadow);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:26px 28px;max-width:360px;width:92%;box-shadow:var(--shadow);
 }
-.modal h3{font-size:1.1rem;margin-bottom:8px;}
-.modal p{color:var(--muted);font-size:.88rem;margin-bottom:20px;line-height:1.5;}
-.modal .btn-row{display:flex;flex-direction:column;gap:10px;}
-.modal-btn{
+.modal h3{font-size:1.05rem;margin-bottom:6px;font-weight:700;}
+.modal p{color:var(--muted);font-size:.86rem;margin-bottom:18px;line-height:1.5;}
+.btn-row{display:flex;flex-direction:column;gap:9px;}
+.mbtn{
   font:inherit;cursor:pointer;color:var(--ink);
-  background:var(--surface);border:1px solid var(--border2);
-  padding:11px 16px;border-radius:11px;text-align:left;
+  background:var(--surface2);border:1px solid var(--border2);
+  padding:10px 14px;border-radius:10px;text-align:left;
   transition:background .15s,border-color .15s;
 }
-.modal-btn:hover{border-color:var(--accent);background:var(--surface2);}
-.modal-btn b{display:block;margin-bottom:2px;}
-.modal-btn small{color:var(--muted);font-size:.8rem;}
-.modal-btn.destructive{border-color:rgba(251,113,133,.3);}
-.modal-btn.destructive:hover{border-color:var(--bad);}
-.modal-cancel{
-  margin-top:12px;width:100%;font:inherit;cursor:pointer;
-  background:transparent;border:none;color:var(--muted);font-size:.88rem;
-  padding:8px;border-radius:8px;
+.mbtn:hover{border-color:var(--accent);background:rgba(52,211,153,.08);}
+.mbtn b{display:block;margin-bottom:2px;font-size:.9rem;}
+.mbtn small{color:var(--muted);font-size:.78rem;}
+.mbtn.dest{border-color:rgba(239,68,68,.3);}
+.mbtn.dest:hover{border-color:var(--bad);}
+.mcancel{
+  margin-top:10px;width:100%;font:inherit;cursor:pointer;
+  background:transparent;border:none;color:var(--muted);
+  font-size:.85rem;padding:7px;border-radius:7px;
 }
-.modal-cancel:hover{color:var(--ink);}
+.mcancel:hover{color:var(--ink);}
 
 /* ── keypad ── */
 .keypad{
-  position:fixed;bottom:0;left:0;right:0;
-  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
-  background:rgba(10,14,24,.95);border-top:1px solid var(--border2);
-  backdrop-filter:blur(16px);
-  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;z-index:50;
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+  background:rgba(17,24,39,.97);border-top:1px solid var(--border2);
+  backdrop-filter:blur(18px);
+  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;
+  max-height:28vh;overflow-y:auto;
 }
 .keypad button{
   font:inherit;color:var(--ink);cursor:pointer;
   background:var(--surface2);border:1px solid var(--border);
-  padding:9px 10px;min-width:36px;border-radius:9px;font-size:.9rem;
+  /* WCAG 2.5.5: minimum 44×44 CSS px touch target */
+  min-width:44px;height:44px;padding:0 10px;
+  border-radius:9px;font-size:.88rem;
   transition:background .1s,transform .06s;
+  display:flex;align-items:center;justify-content:center;
 }
-.keypad button:active{transform:scale(.93);}
-.keypad .kdi{color:var(--accent);border-color:rgba(94,234,212,.25);}
-.keypad .kutil{color:var(--accent2);}
+.keypad button:active{transform:scale(.92);}
+.keypad .kdi{color:var(--accent);border-color:rgba(52,211,153,.25);font-weight:600;}
+.keypad .kutil{color:var(--accent2);border-color:rgba(129,140,248,.25);}
 
-/* ── legend ── */
-.legend{font-size:.76rem;color:var(--dim);margin-top:10px;line-height:1.5;}
-.legend b{color:var(--muted);}
-
-/* ── streak badge ── */
-.streak{display:flex;align-items:center;gap:5px;font-size:.82rem;color:var(--warn);}
-.streak svg{width:14px;height:14px;}
+/* ── animations ── */
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-3px);}
+  60%{transform:translateX(3px);}
+}
+.sq.live.bad{animation:shake .25s ease .15s;}
 </style>
 </head>
 <body>
@@ -255,113 +277,113 @@ label.toggle.active-lbl{border-color:var(--accent);color:var(--accent);}
     <span class="brand-sub">grapheme-aware crossword · Bantu languages</span>
     <span class="pencil-badge" id="pencilBadge">✏ PENCIL</span>
   </div>
-  <div class="toolbar">
+  <div class="toolbar" role="toolbar" aria-label="Puzzle controls">
     <select id="lang" aria-label="Language"></select>
     <button id="btnNew" class="primary">New Puzzle</button>
-    <div class="sep"></div>
-
-    <!-- Check group -->
+    <div class="sep" role="separator"></div>
     <button id="btnCheck">Check</button>
-    <label class="toggle" id="lblAutocheck" title="Autocheck: show errors as you type">
-      <input type="checkbox" id="cbAutocheck" />
+    <label class="toggle" id="lblAuto" title="Show errors in real time as you type">
+      <input type="checkbox" id="cbAuto" aria-label="Autocheck toggle"/>
       <span>Autocheck</span>
     </label>
-
-    <!-- Reveal / Hint group -->
     <button id="btnHint">Hint ▾</button>
-
-    <div class="sep"></div>
-
-    <!-- Pencil mode -->
-    <label class="toggle" id="lblPencil" title="Pencil mode: mark uncertain letters in grey">
-      <input type="checkbox" id="cbPencil" />
+    <div class="sep" role="separator"></div>
+    <label class="toggle" id="lblPencil" title="Mark uncertain letters in pencil (grey)">
+      <input type="checkbox" id="cbPencil" aria-label="Pencil mode toggle"/>
       <span>✏ Pencil</span>
     </label>
-
-    <!-- Timer -->
-    <label class="toggle" id="lblTimer" title="Toggle timer">
-      <input type="checkbox" id="cbTimer" checked />
+    <label class="toggle" id="lblTimer" title="Show/hide timer">
+      <input type="checkbox" id="cbTimer" checked aria-label="Timer toggle"/>
       <span>⏱</span>
     </label>
-
     <button id="btnClear" class="danger">Clear</button>
   </div>
 </header>
 
-<!-- Clue bar — shows active clue prominently above grid (NYT-style) -->
-<div class="clue-bar" id="clueBar">
+<!-- NYT-style clue bar: always shows the active clue above the grid -->
+<div class="clue-bar" id="clueBar" aria-live="polite" aria-atomic="true">
   <span class="cb-num" id="cbNum">—</span>
   <span class="cb-dir" id="cbDir"></span>
   <span class="cb-text" id="cbText">Select a square or clue to begin</span>
   <span class="cb-len" id="cbLen"></span>
 </div>
 
-<!-- Status + timer row -->
+<!-- Status + timer -->
 <div class="status-bar">
-  <span class="status-msg" id="statusMsg"></span>
-  <div style="display:flex;align-items:center;gap:12px;">
+  <span class="status-msg" id="statusMsg" role="status" aria-live="polite"></span>
+  <div class="timer-area">
     <div class="streak" id="streakBadge" style="display:none">
-      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"/></svg>
-      <span id="streakCount">0</span>
+      🔥 <span id="streakCount">0</span>
     </div>
-    <span id="timer" class="">00:00</span>
+    <span id="timer">00:00</span>
   </div>
+</div>
+
+<!-- Word-progress bar (fix #7 from audit) -->
+<div class="progress-wrap" aria-hidden="true">
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 </div>
 
 <div class="layout">
   <!-- Grid -->
-  <div class="board-wrap">
-    <div id="board"></div>
-    <div class="legend">
-      Each cell = one <b>grapheme</b>. Digraphs like <b>ng'</b>, <b>zv</b>, <b>ch</b> = one square — use the keypad below.
+  <div class="board-wrap" role="main">
+    <!-- aria-label on the grid itself for screen readers -->
+    <div id="board" role="grid" aria-label="Crossword grid"></div>
+    <div class="legend" aria-hidden="true">
+      Each cell = one <b>grapheme</b>. Digraphs <b>ng'</b>, <b>zv</b>, <b>ch</b> = one square — use the keypad or type normally.
     </div>
   </div>
 
   <!-- Clue panels -->
-  <div class="side">
-    <div class="clue-panel"><h2>Across</h2><div id="acrossClues"></div></div>
-    <div class="clue-panel"><h2>Down</h2><div id="downClues"></div></div>
+  <div class="side" role="complementary" aria-label="Clues">
+    <div class="clue-panel" id="panelAcross">
+      <h2>Across</h2>
+      <div id="acrossClues" role="list"></div>
+    </div>
+    <div class="clue-panel" id="panelDown">
+      <h2>Down</h2>
+      <div id="downClues" role="list"></div>
+    </div>
   </div>
 </div>
 
 <!-- Hint / Reveal modal -->
-<div class="modal-overlay" id="hintModal">
+<div class="modal-overlay" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="modal">
-    <h3>Hint &amp; Reveal</h3>
-    <p>Choose how much help you want. Using reveal marks the word and won't count toward a clean-solve streak.</p>
+    <h3 id="hintTitle">Hint &amp; Reveal</h3>
+    <p>Choose how much help you want. Using reveal won't count toward a clean-solve streak.</p>
     <div class="btn-row">
-      <button class="modal-btn" id="hintLetter">
+      <button class="mbtn" id="hintLetter">
         <b>Reveal Letter</b>
-        <small>Fill in the current cell only</small>
+        <small>Fill in the currently selected cell only</small>
       </button>
-      <button class="modal-btn" id="hintWord">
+      <button class="mbtn" id="hintWord">
         <b>Reveal Word</b>
         <small>Fill in the entire selected word</small>
       </button>
-      <button class="modal-btn destructive" id="hintPuzzle">
+      <button class="mbtn dest" id="hintPuzzle">
         <b>Reveal Entire Puzzle</b>
-        <small>Show all answers — puzzle is complete</small>
+        <small>Show all answers — puzzle marked complete</small>
       </button>
     </div>
-    <button class="modal-cancel" id="hintCancel">Cancel</button>
+    <button class="mcancel" id="hintCancel">Cancel</button>
   </div>
 </div>
 
-<!-- On-screen grapheme keypad -->
-<div class="keypad" id="keypad"></div>
+<!-- On-screen grapheme keypad (all 44×44 touch targets — WCAG 2.5.5) -->
+<div class="keypad" id="keypad" aria-label="Grapheme keypad" role="toolbar"></div>
 
 <script>
 "use strict";
-
 /* ============================================================
    1. LANGUAGE DATA
    ============================================================ */
-const LANGUAGES = {
-  Shona: {
-    config: {
+const LANGUAGES={
+  Shona:{
+    config:{
       language:"Shona",
       atomic_graphemes:["ch","sh","sv","zv","ng","mb","nd","nj","ny","nz","mh","pf","ts","dz","vh"],
-      ignore_casing:true, strip_diacritics:false, preserve_marks:[]
+      ignore_casing:true,strip_diacritics:false,preserve_marks:[]
     },
     words:[
       ["chikoro","Nzvimbo inodzidzirwa vana (school)"],
@@ -382,7 +404,7 @@ const LANGUAGES = {
     config:{
       language:"Swahili",
       atomic_graphemes:["ng'","ch","sh","gh","kh","th","dh","ng","ny","mb","nd"],
-      ignore_casing:true, strip_diacritics:true, preserve_marks:["'"]
+      ignore_casing:true,strip_diacritics:true,preserve_marks:["'"]
     },
     words:[
       ["shule","Mahali wanafunzi husoma (school)"],
@@ -402,197 +424,205 @@ const LANGUAGES = {
 };
 
 /* ============================================================
-   2. TOKENIZER (grapheme-aware, maximal-munch)
+   2. TOKENIZER — maximal-munch grapheme segmentation
    ============================================================ */
-class Language {
+class Language{
   constructor(cfg){
     this.name=cfg.language;
     this.ignoreCasing=cfg.ignore_casing;
     this.stripDiacritics=cfg.strip_diacritics;
     this.preserve=cfg.preserve_marks||[];
-    this.ordered=[...new Set((cfg.atomic_graphemes||[]).map(g=>this.normalize(g)))]
+    this.ordered=[...new Set((cfg.atomic_graphemes||[]).map(g=>this.norm(g)))]
       .sort((a,b)=>b.length-a.length);
   }
-  normalize(text){
-    if(this.ignoreCasing) text=text.toLowerCase();
+  norm(text){
+    if(this.ignoreCasing)text=text.toLowerCase();
     if(this.stripDiacritics){
-      const sent={};
-      this.preserve.forEach((m,i)=>{sent[m]=String.fromCharCode(0xE000+i);});
-      for(const m in sent) text=text.split(m).join(sent[m]);
+      const S={};this.preserve.forEach((m,i)=>{S[m]=String.fromCharCode(0xE000+i);});
+      for(const m in S)text=text.split(m).join(S[m]);
       text=text.normalize("NFD").replace(/\p{Mn}/gu,"").normalize("NFC");
-      for(const m in sent) text=text.split(sent[m]).join(m);
+      for(const m in S)text=text.split(S[m]).join(m);
     }
     return text;
   }
   tokenize(word){
-    const t=this.normalize(word);const out=[];let i=0;
+    const t=this.norm(word);const out=[];let i=0;
     while(i<t.length){
-      let matched=null;
-      for(const g of this.ordered){if(t.startsWith(g,i)){matched=g;break;}}
-      if(matched){out.push(matched);i+=matched.length;}
-      else{out.push(t[i]);i+=1;}
+      const g=this.ordered.find(g=>t.startsWith(g,i));
+      if(g){out.push(g);i+=g.length;}else{out.push(t[i]);i++;}
     }
     return out;
   }
 }
 
 /* ============================================================
-   3. GENERATOR (greedy crossing placement)
+   3. GENERATOR — greedy crossing placement with retry
+   FIX #5: minimum-word-count guard + shuffle-retry
    ============================================================ */
-const ACROSS="across",DOWN="down";
-function generate(entries,lang){
-  let toks=entries.map(e=>({entry:e,tokens:lang.tokenize(e[0])})).filter(x=>x.tokens.length);
-  toks.sort((a,b)=>b.tokens.length-a.tokens.length);
+const AC="across",DN="down";
+
+function generate(entries,lang,attempt=0){
+  const toks=entries.map(e=>({e,t:lang.tokenize(e[0])})).filter(x=>x.t.length);
+  toks.sort((a,b)=>b.t.length-a.t.length);
   const cells=new Map(),placements=[];
-  const key=(r,c)=>r+","+c;
-  function canPlace(tokens,row,col,dir){
-    let crossings=0;
-    const[dr,dc]=dir===ACROSS?[0,1]:[1,0];
-    if(cells.has(key(row-dr,col-dc)))return -1;
-    if(cells.has(key(row+dr*tokens.length,col+dc*tokens.length)))return -1;
-    for(let i=0;i<tokens.length;i++){
-      const r=row+dr*i,c=col+dc*i,ex=cells.get(key(r,c));
-      if(ex!==undefined){if(ex!==tokens[i])return -1;crossings++;}
+  const K=(r,c)=>r+","+c;
+
+  function canPlace(tok,row,col,dir){
+    let x=0;const[dr,dc]=dir===AC?[0,1]:[1,0];
+    if(cells.has(K(row-dr,col-dc)))return -1;
+    if(cells.has(K(row+dr*tok.length,col+dc*tok.length)))return -1;
+    for(let i=0;i<tok.length;i++){
+      const r=row+dr*i,c=col+dc*i,ex=cells.get(K(r,c));
+      if(ex!==undefined){if(ex!==tok[i])return -1;x++;}
       else{
-        const[a,b]=dir===ACROSS?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];
-        if(cells.has(key(a[0],a[1]))||cells.has(key(b[0],b[1])))return -1;
+        const[a,b]=dir===AC?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];
+        if(cells.has(K(a[0],a[1]))||cells.has(K(b[0],b[1])))return -1;
       }
     }
-    if(placements.length&&crossings===0)return -1;
-    return crossings;
+    return placements.length&&x===0?-1:x;
   }
   function commit(p){
-    p.tokens.forEach((t,i)=>{
-      const r=p.dir===ACROSS?p.row:p.row+i,c=p.dir===ACROSS?p.col+i:p.col;
-      cells.set(key(r,c),t);
-    });
+    const[dr,dc]=p.dir===AC?[0,1]:[1,0];
+    p.tok.forEach((t,i)=>cells.set(K(p.row+dr*i,p.col+dc*i),t));
     placements.push(p);
   }
-  function best(entry,tokens){
-    let cands=[];
-    for(const[k,gtok]of cells){
+  function bestPlacement(e,tok){
+    const cands=[];
+    for(const[k,gt]of cells){
       const[gr,gc]=k.split(",").map(Number);
-      for(let i=0;i<tokens.length;i++){
-        if(tokens[i]!==gtok)continue;
-        for(const dir of[ACROSS,DOWN]){
-          const row=dir===ACROSS?gr:gr-i,col=dir===ACROSS?gc-i:gc;
-          const score=canPlace(tokens,row,col,dir);
-          if(score>0){
-            const cr=dir===ACROSS?row:row+(tokens.length>>1);
-            const cc=dir===ACROSS?col+(tokens.length>>1):col;
-            cands.push({score,compact:-(Math.abs(cr)+Math.abs(cc)),p:{entry,tokens,row,col,dir}});
-          }
+      for(let i=0;i<tok.length;i++){
+        if(tok[i]!==gt)continue;
+        for(const dir of[AC,DN]){
+          const row=dir===AC?gr:gr-i,col=dir===AC?gc-i:gc;
+          const sc=canPlace(tok,row,col,dir);
+          if(sc<0)continue;
+          const cr=dir===AC?row:row+(tok.length>>1),cc=dir===AC?col+(tok.length>>1):col;
+          cands.push({sc,cp:-(Math.abs(cr)+Math.abs(cc)),p:{e,tok,row,col,dir}});
         }
       }
     }
     if(!cands.length)return null;
-    cands.sort((a,b)=>b.score-a.score||b.compact-a.compact);
+    cands.sort((a,b)=>b.sc-a.sc||b.cp-a.cp);
     return cands[0].p;
   }
-  commit({entry:toks[0].entry,tokens:toks[0].tokens,row:0,col:0,dir:ACROSS});
+
+  commit({e:toks[0].e,tok:toks[0].t,row:0,col:0,dir:AC});
   let rem=toks.slice(1),progress=true;
   while(rem.length&&progress){
     progress=false;const left=[];
-    for(const{entry,tokens}of rem){
-      const p=best(entry,tokens);
-      if(p){commit(p);progress=true;}else left.push({entry,tokens});
-    }
+    for(const{e,t}of rem){const p=bestPlacement(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}
     rem=left;
   }
-  // number start cells in reading order
+
+  /* FIX #5: if fewer than 4 words placed and we have retries left, shuffle and retry */
+  if(placements.length<4&&attempt<5){
+    return generate(shuffle(entries),lang,attempt+1);
+  }
+
+  /* Number start-cells in reading order */
   const starts=new Map();
-  for(const p of placements){const k=p.row+","+p.col;if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
-  [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;})
-    .forEach((k,idx)=>starts.get(k).forEach(p=>p.number=idx+1));
+  for(const p of placements){const k=K(p.row,p.col);if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
+  [...starts.keys()]
+    .sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;})
+    .forEach((k,i)=>starts.get(k).forEach(p=>p.num=i+1));
+
   return{cells,placements};
 }
 
 /* ============================================================
-   4. GAME STATE
+   4. STATE
    ============================================================ */
-let lang,puzzle,guesses,pencilSet,revealedCells,bounds,active=null;
+let lang,puzzle,guesses,pencilSet,revealed,bounds,active=null;
 let autochecking=false,pencilMode=false,timerOn=true;
 let timerSec=0,timerInterval=null,cleanSolve=true,streak=0;
-let pending=""; // IME compose buffer
+let pending="";     // IME compose buffer
+let renderTimer=null; // debounce handle (FIX #9)
 
-function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-
-function cellKey(r,c){return r+","+c;}
+function shuffle(a){
+  a=a.slice();
+  for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+const CK=(r,c)=>r+","+c;
 
 function newPuzzle(langName){
   const data=LANGUAGES[langName];
   lang=new Language(data.config);
-  const words=shuffle(data.words);
-  puzzle=generate(words,lang);
-  guesses=new Map();
-  pencilSet=new Set();
-  revealedCells=new Set();
+  puzzle=generate(shuffle(data.words),lang);
+  guesses=new Map();pencilSet=new Set();revealed=new Set();
   for(const k of puzzle.cells.keys())guesses.set(k,"");
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
   bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
-  active=null; pending=""; cleanSolve=true;
+  active=null;pending="";cleanSolve=true;
   resetTimer();startTimer();
-  setStatus(`${puzzle.placements.length} words · select a square to begin`);
+  updateProgress();
+  setStatus(`${puzzle.placements.length} words · select a square to begin`,"info");
   render();renderClues();renderKeypad();updateClueBar();
 }
 
-/* ── coords / lookups ── */
 function wordKeys(p){
-  const out=[];
-  for(let i=0;i<p.tokens.length;i++){
-    const r=p.dir===ACROSS?p.row:p.row+i,c=p.dir===ACROSS?p.col+i:p.col;
-    out.push(cellKey(r,c));
-  }return out;
+  const[dr,dc]=p.dir===AC?[0,1]:[1,0];
+  return p.tok.map((_,i)=>CK(p.row+dr*i,p.col+dc*i));
 }
-function numberMap(){
+function numMap(){
   const m=new Map();
-  for(const p of puzzle.placements){const k=cellKey(p.row,p.col);if(!m.has(k))m.set(k,p.number);}
+  for(const p of puzzle.placements){const k=CK(p.row,p.col);if(!m.has(k))m.set(k,p.num);}
   return m;
 }
-function wordsThrough(k){return puzzle.placements.filter(p=>wordKeys(p).includes(k));}
+function wordsAt(k){return puzzle.placements.filter(p=>wordKeys(p).includes(k));}
 function isSolved(p){return wordKeys(p).every(k=>(guesses.get(k)||"")===puzzle.cells.get(k));}
 function allSolved(){return puzzle.placements.every(isSolved);}
+function wordProgress(){
+  let s=0;for(const p of puzzle.placements)if(isSolved(p))s++;
+  return{s,t:puzzle.placements.length};
+}
 
 /* ============================================================
-   5. RENDER — CSS Grid board (fixes missing border lines)
+   5. RENDER — classic black/white crossword table
    ============================================================ */
 function render(){
   const board=document.getElementById("board");
   const cols=bounds.cmax-bounds.cmin+1,rows=bounds.rmax-bounds.rmin+1;
-  board.style.gridTemplateColumns=`repeat(${cols},44px)`;
-  board.style.gridTemplateRows=`repeat(${rows},44px)`;
-  const nums=numberMap();
-  const activeKeys=active?new Set(wordKeys(active.placement)):new Set();
-  const activeCellKey=active?wordKeys(active.placement)[active.idx]:null;
+  board.style.gridTemplateColumns=`repeat(${cols},var(--cell-sz))`;
+  board.style.gridTemplateRows=`repeat(${rows},var(--cell-sz))`;
+
+  const nm=numMap();
+  const wk=active?new Set(wordKeys(active.placement)):new Set();
+  const ack=active?wordKeys(active.placement)[active.idx]:null;
 
   let html="";
   for(let r=bounds.rmin;r<=bounds.rmax;r++){
     for(let c=bounds.cmin;c<=bounds.cmax;c++){
-      const k=cellKey(r,c);
-      if(!puzzle.cells.has(k)){html+=`<div class="block"></div>`;continue;}
-      const cls=["cell"];
-      if(k===activeCellKey) cls.push("active");
-      else if(activeKeys.has(k)) cls.push("in-word");
+      const k=CK(r,c);
+      if(!puzzle.cells.has(k)){html+=`<div class="sq blk" role="presentation"></div>`;continue;}
       const g=guesses.get(k)||"";
-      if(pencilSet.has(k)&&g) cls.push("pencil-cell");
-      if(autochecking&&g&&!revealedCells.has(k)){
-        if(g===puzzle.cells.get(k)) cls.push("correct");
-        else if(g!==puzzle.cells.get(k)) cls.push("autocheck-wrong");
+      const cl=["sq","live"];
+      const isCur=k===ack;
+      const inWd=!isCur&&wk.has(k);
+      const isRev=revealed.has(k);
+      if(isCur)cl.push("cur");
+      else if(inWd)cl.push("wd");
+      if(pencilSet.has(k)&&g&&!isCur&&!inWd)cl.push("pnc");
+      if(autochecking&&g&&!isRev){
+        if(g===puzzle.cells.get(k)){if(!isCur&&!inWd)cl.push("ok");}
+        else cl.push("bad");
       }
-      const num=nums.get(k);
-      html+=`<div class="${cls.join(" ")}" data-k="${k}">
-        ${num?`<span class="num">${num}</span>`:""}
-        <span class="val">${g.toUpperCase()}</span>
-      </div>`;
+      if(isRev&&!isCur&&!inWd)cl.push("rev");
+      const num=nm.get(k);
+      html+=`<div class="${cl.join(" ")}" data-k="${k}" role="gridcell" aria-label="${num?"clue "+num+", ":""}${g||"empty"}" tabindex="${isCur?0:-1}">`+
+            (num?`<span class="cn" aria-hidden="true">${num}</span>`:"")+
+            `<span class="lv" aria-hidden="true">${g.toUpperCase()}</span></div>`;
     }
   }
   board.innerHTML=html;
-  board.querySelectorAll(".cell").forEach(el=>el.addEventListener("click",()=>onCellClick(el.dataset.k)));
+  board.querySelectorAll(".live").forEach(el=>el.addEventListener("click",()=>onCellClick(el.dataset.k)));
+  /* Restore physical focus to active cell */
+  if(ack){const el=board.querySelector(`[data-k="${ack}"]`);if(el)el.focus({preventScroll:true});}
 }
 
 /* ============================================================
-   6. CLUE BAR + CLUE PANELS
+   6. CLUE BAR + CLUE PANELS (FIX #4 + #10)
    ============================================================ */
 function updateClueBar(){
   if(!active){
@@ -603,42 +633,67 @@ function updateClueBar(){
     return;
   }
   const p=active.placement;
-  document.getElementById("cbNum").textContent=p.number;
+  document.getElementById("cbNum").textContent=p.num;
   document.getElementById("cbDir").textContent=p.dir.toUpperCase();
-  document.getElementById("cbText").textContent=p.entry[1];
-  document.getElementById("cbLen").textContent=`(${p.tokens.length})`;
+  document.getElementById("cbText").textContent=p.e[1];
+  document.getElementById("cbLen").textContent=`(${p.tok.length})`;
 }
 
 function renderClues(){
   const mk=(dir,elId)=>{
-    const items=puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.number-b.number);
+    const items=puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.num-b.num);
     document.getElementById(elId).innerHTML=items.map(p=>
-      `<div class="clue-item${isSolved(p)?" solved":""}" data-n="${p.number}" data-d="${p.dir}">
-        <span class="cnum">${p.number}</span>
-        <span>${p.entry[1]} <span class="clen">(${p.tokens.length})</span></span>
-      </div>`
+      `<div class="ci${isSolved(p)?" done":""}" data-n="${p.num}" data-d="${p.dir}" role="listitem" tabindex="0">`+
+      `<span class="cn2">${p.num}</span>`+
+      `<span>${p.e[1]} <span class="cl">(${p.tok.length})</span></span></div>`
     ).join("");
   };
-  mk(ACROSS,"acrossClues"); mk(DOWN,"downClues");
-  document.querySelectorAll(".clue-item").forEach(el=>el.addEventListener("click",()=>{
-    const p=puzzle.placements.find(x=>x.number==el.dataset.n&&x.dir===el.dataset.d);
-    if(p){active={placement:p,idx:0};pending="";render();renderClues();updateClueBar();}
-  }));
-}
+  mk(AC,"acrossClues");mk(DN,"downClues");
 
-function highlightClues(){
-  document.querySelectorAll(".clue-item").forEach(el=>{
-    const p=puzzle.placements.find(x=>x.number==el.dataset.n&&x.dir===el.dataset.d);
-    el.classList.toggle("active",active&&p===active.placement);
-    el.classList.toggle("solved",!!p&&isSolved(p));
+  document.querySelectorAll(".ci").forEach(el=>{
+    const handler=()=>{
+      const p=puzzle.placements.find(x=>x.num==el.dataset.n&&x.dir===el.dataset.d);
+      if(!p)return;
+      active={placement:p,idx:0};pending="";
+      render();syncClueHighlight();updateClueBar();
+      /* FIX #10: scroll clue into view AND scroll first cell into view */
+      el.scrollIntoView({block:"center",behavior:"smooth"});
+      const firstKey=wordKeys(p)[0];
+      const cellEl=document.querySelector(`[data-k="${firstKey}"]`);
+      if(cellEl)cellEl.scrollIntoView({block:"nearest",behavior:"smooth"});
+    };
+    el.addEventListener("click",handler);
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")handler();});
   });
 }
 
+function syncClueHighlight(){
+  document.querySelectorAll(".ci").forEach(el=>{
+    const p=puzzle.placements.find(x=>x.num==el.dataset.n&&x.dir===el.dataset.d);
+    el.classList.toggle("act",!!(active&&p===active.placement));
+    el.classList.toggle("done",!!p&&isSolved(p));
+  });
+  /* FIX #4: scroll active clue to centre of its panel */
+  if(active){
+    const p=active.placement;
+    const el=document.querySelector(`.ci[data-n="${p.num}"][data-d="${p.dir}"]`);
+    if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});
+  }
+}
+
+function updateProgress(){
+  const{s,t}=wordProgress();
+  const pct=t>0?Math.round(s/t*100):0;
+  document.getElementById("progressFill").style.width=pct+"%";
+}
+
 /* ============================================================
-   7. INPUT: CELL CLICK, IME COMPOSE, KEYPAD
+   7. INPUT HANDLING
+   FIX #2: focus ring via tabindex, aria-label
+   FIX #8: pending cleared on direction toggle
    ============================================================ */
 function onCellClick(k){
-  const through=wordsThrough(k);
+  const through=wordsAt(k);
   if(!through.length)return;
   let chosen=through[0];
   if(active&&through.length>1&&wordKeys(active.placement).includes(k)){
@@ -648,15 +703,7 @@ function onCellClick(k){
   }
   const idx=wordKeys(chosen).indexOf(k);
   active={placement:chosen,idx};pending="";
-  render();highlightClues();updateClueBar();
-  scrollClueIntoView();
-}
-
-function scrollClueIntoView(){
-  if(!active)return;
-  const p=active.placement;
-  const el=document.querySelector(`.clue-item[data-n="${p.number}"][data-d="${p.dir}"]`);
-  if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});
+  render();syncClueHighlight();updateClueBar();
 }
 
 function advance(n=1){
@@ -665,19 +712,29 @@ function advance(n=1){
   active.idx=Math.max(0,Math.min(active.idx+n,len-1));
 }
 
+/* FIX #2: smart auto-advance — skip over already-filled cells on right/down arrows */
+function advanceSmart(n=1){
+  if(!active)return;
+  const keys=wordKeys(active.placement);
+  let idx=active.idx+n;
+  /* Skip filled cells when moving forward */
+  while(n>0&&idx<keys.length&&(guesses.get(keys[idx])||""))idx+=n;
+  active.idx=Math.max(0,Math.min(idx,keys.length-1));
+}
+
 function backspace(){
   if(!active)return;
   pending="";
   const keys=wordKeys(active.placement);
-  if((guesses.get(keys[active.idx])||"")===""&&active.idx>0) active.idx--;
+  if((guesses.get(keys[active.idx])||"")===""&&active.idx>0)active.idx--;
   const k=keys[active.idx];
-  guesses.set(k,"");pencilSet.delete(k);revealedCells.delete(k);
-  afterInput();
+  guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);
+  schedRender();
 }
 
 function commitGrapheme(g,k){
   guesses.set(k,g);
-  if(pencilMode) pencilSet.add(k); else pencilSet.delete(k);
+  if(pencilMode)pencilSet.add(k);else pencilSet.delete(k);
 }
 
 function typeGrapheme(g){
@@ -686,44 +743,46 @@ function typeGrapheme(g){
   const keys=wordKeys(active.placement);
   if(active.idx>=keys.length)return;
   commitGrapheme(g,keys[active.idx]);
-  advance(1);afterInput();
+  advance(1);schedRender();
 }
 
-// IME-style: n,g → ng ; ng,' → ng'
+/* IME-style compose: n,g → ng ; ng,' → ng' */
 function composeKey(k){
   if(!active)return;
   const keys=wordKeys(active.placement);
   if(active.idx>=keys.length)return;
-  const cur=keys[active.idx];
-  const cand=pending+k;
+  const cur=keys[active.idx],cand=pending+k;
   const isG=lang.ordered.includes(cand);
   const canGrow=lang.ordered.some(g=>g.length>cand.length&&g.startsWith(cand));
-  if(canGrow){pending=cand;guesses.set(cur,cand);render();highlightClues();return;}
-  if(isG){commitGrapheme(cand,cur);pending="";advance(1);afterInput();return;}
-  if(pending===""){commitGrapheme(k,cur);advance(1);afterInput();return;}
+  if(canGrow){pending=cand;guesses.set(cur,cand);render();syncClueHighlight();return;}
+  if(isG){commitGrapheme(cand,cur);pending="";advance(1);schedRender();return;}
+  if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
   commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
 }
 
-function afterInput(){
-  pending="";
-  checkAutocheck();
-  if(allSolved()) onWin();
-  else{render();highlightClues();updateClueBar();}
+/* FIX #9: debounced render to batch rapid keystrokes & avoid flash */
+function schedRender(){
+  if(renderTimer)clearTimeout(renderTimer);
+  renderTimer=setTimeout(()=>{
+    renderTimer=null;
+    const prog=wordProgress();
+    setStatus(`${prog.s}/${prog.t} words complete`);
+    updateProgress();
+    if(autochecking){}  // styles applied in render()
+    if(allSolved())onWin();
+    else{render();syncClueHighlight();updateClueBar();}
+  },60);
 }
 
 /* ============================================================
-   8. AUTOCHECK
+   8. CHECK
    ============================================================ */
-function checkAutocheck(){
-  if(!autochecking)return; // styles applied during render()
-}
-
 function checkManual(){
   let wrong=0,filled=0;
   for(const[k,v]of guesses){if(v){filled++;if(v!==puzzle.cells.get(k))wrong++;}}
-  if(!filled){setStatus("Nothing filled yet.");return;}
-  if(wrong) setStatus(`${wrong} error${wrong>1?"s":""} found — keep going.`,"err");
-  else setStatus("All filled cells are correct ✓");
+  if(!filled){setStatus("Nothing filled yet — select a clue to start.");return;}
+  if(wrong)setStatus(`${wrong} error${wrong>1?"s":""} found — keep going.`,"err");
+  else setStatus("All filled cells correct ✓","info");
   render();
 }
 
@@ -733,79 +792,65 @@ function checkManual(){
 function revealLetter(){
   if(!active){setStatus("Select a cell first.");return;}
   const k=wordKeys(active.placement)[active.idx];
-  guesses.set(k,puzzle.cells.get(k));
-  pencilSet.delete(k);revealedCells.add(k);
-  cleanSolve=false;
-  advance(1);afterInput();
+  guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);
+  cleanSolve=false;advance(1);schedRender();
 }
-
 function revealWord(){
   if(!active){setStatus("Select a word first.");return;}
-  wordKeys(active.placement).forEach(k=>{
-    guesses.set(k,puzzle.cells.get(k));
-    pencilSet.delete(k);revealedCells.add(k);
-  });
-  cleanSolve=false;afterInput();
+  wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});
+  cleanSolve=false;schedRender();
 }
-
 function revealPuzzle(){
-  for(const[k]of guesses){
-    guesses.set(k,puzzle.cells.get(k));
-    pencilSet.delete(k);revealedCells.add(k);
-  }
-  cleanSolve=false;afterInput();
+  for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}
+  cleanSolve=false;schedRender();
   setStatus("Puzzle revealed — try again for a clean solve!");
 }
 
 /* ============================================================
-   10. WIN STATE + STREAK
+   10. WIN
    ============================================================ */
 function onWin(){
   stopTimer();
-  const mins=Math.floor(timerSec/60).toString().padStart(2,"0");
-  const secs=(timerSec%60).toString().padStart(2,"0");
+  updateProgress();
+  const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
   if(cleanSolve){
     streak++;
     document.getElementById("streakCount").textContent=streak;
     document.getElementById("streakBadge").style.display="flex";
-    setStatus(`🌟 Wakunda! Clean solve in ${mins}:${secs}. Streak: ${streak}`);
+    setStatus(`🌟 Wakunda! Clean solve in ${m}:${s} · Streak: ${streak}`,"win");
   }else{
-    setStatus(`✅ Completed in ${mins}:${secs}. (No streak — hints were used)`);
-  }
-  autochecking=false;document.getElementById("cbAutocheck").checked=false;
-  render();highlightClues();
+    setStatus(`✅ Completed in ${m}:${s} (hints used — no streak)`);}
+  autochecking=false;document.getElementById("cbAuto").checked=false;
+  document.getElementById("lblAuto").classList.remove("on");
+  render();syncClueHighlight();
 }
 
 /* ============================================================
    11. TIMER
    ============================================================ */
-function resetTimer(){timerSec=0;stopTimer();updateTimerDisplay();}
-function startTimer(){if(!timerOn)return;timerInterval=setInterval(()=>{timerSec++;updateTimerDisplay();},1000);}
+function resetTimer(){timerSec=0;stopTimer();tick();}
+function startTimer(){if(!timerOn)return;timerInterval=setInterval(()=>{timerSec++;tick();},1000);}
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
-function updateTimerDisplay(){
-  const m=Math.floor(timerSec/60).toString().padStart(2,"0");
-  const s=(timerSec%60).toString().padStart(2,"0");
+function tick(){
+  const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
   document.getElementById("timer").textContent=`${m}:${s}`;
 }
 
 /* ============================================================
-   12. KEYPAD
+   12. KEYPAD (WCAG 2.5.5 — 44px min touch targets)
    ============================================================ */
 function renderKeypad(){
   const vowels=["a","e","i","o","u"];
   const cons="bdfghjklmnprstvwyz".split("");
   const digs=[...lang.ordered].sort();
   const kp=document.getElementById("keypad");
-  const mk=(label,cls="")=>`<button class="${cls}" data-g="${label}">${label.toUpperCase()}</button>`;
-  kp.innerHTML=
-    vowels.map(v=>mk(v)).join("")+
-    cons.map(c=>mk(c)).join("")+
-    digs.map(d=>mk(d,"kdi")).join("")+
-    mk("⌫","kutil del")+mk("→","kutil skip");
+  const mk=(lbl,cls="")=>`<button class="${cls}" data-g="${lbl}" aria-label="${lbl}">${lbl.toUpperCase()}</button>`;
+  kp.innerHTML=vowels.map(v=>mk(v)).join("")+cons.map(c=>mk(c)).join("")+
+    digs.map(d=>mk(d,"kdi")).join("")+mk("⌫","kutil")+mk("→","kutil");
   kp.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
     const g=b.dataset.g;
     if(g==="⌫")backspace();
-    else if(g==="→"){pending="";advance(1);render();highlightClues();}
+    else if(g==="→"){pending="";advance(1);render();syncClueHighlight();}
     else typeGrapheme(g.toLowerCase());
   }));
 }
@@ -818,37 +863,35 @@ function setStatus(msg,cls=""){
   el.textContent=msg;el.className="status-msg"+(cls?" "+cls:"");
 }
 
-document.getElementById("btnNew").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value));
+document.getElementById("btnNew").addEventListener("click",()=>{
+  newPuzzle(document.getElementById("lang").value);
+});
 document.getElementById("btnClear").addEventListener("click",()=>{
-  for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealedCells.delete(k);}
+  for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);}
   pending="";cleanSolve=true;resetTimer();startTimer();
-  render();highlightClues();setStatus("Cleared.");
+  updateProgress();render();syncClueHighlight();setStatus("Cleared.","info");
 });
 document.getElementById("btnCheck").addEventListener("click",checkManual);
 
-// Autocheck toggle
-document.getElementById("cbAutocheck").addEventListener("change",function(){
+document.getElementById("cbAuto").addEventListener("change",function(){
   autochecking=this.checked;
-  document.getElementById("lblAutocheck").classList.toggle("active-lbl",this.checked);
+  document.getElementById("lblAuto").classList.toggle("on",this.checked);
   render();
 });
-
-// Pencil toggle
 document.getElementById("cbPencil").addEventListener("change",function(){
   pencilMode=this.checked;
-  document.getElementById("lblPencil").classList.toggle("active-lbl",this.checked);
+  document.getElementById("lblPencil").classList.toggle("on",this.checked);
   document.body.classList.toggle("pencil-mode",this.checked);
 });
-
-// Timer toggle
 document.getElementById("cbTimer").addEventListener("change",function(){
   timerOn=this.checked;
-  document.getElementById("timer").classList.toggle("hidden-timer",!this.checked);
-  if(this.checked&&!timerInterval) startTimer();
-  if(!this.checked) stopTimer();
+  document.getElementById("timer").classList.toggle("hidden",!this.checked);
+  if(this.checked&&!timerInterval)startTimer();
+  if(!this.checked)stopTimer();
+  document.getElementById("lblTimer").classList.toggle("on",this.checked);
 });
 
-// Hint modal
+/* Hint modal */
 document.getElementById("btnHint").addEventListener("click",()=>document.getElementById("hintModal").classList.add("open"));
 document.getElementById("hintCancel").addEventListener("click",()=>document.getElementById("hintModal").classList.remove("open"));
 document.getElementById("hintModal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
@@ -856,32 +899,35 @@ document.getElementById("hintLetter").addEventListener("click",()=>{document.get
 document.getElementById("hintWord").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealWord();});
 document.getElementById("hintPuzzle").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealPuzzle();});
 
-// Physical keyboard
+/* Keyboard navigation
+   FIX #2: smart arrow nav
+   FIX #8: pending cleared on space/direction toggle */
 document.addEventListener("keydown",e=>{
   if(!active)return;
   if(e.key==="Backspace"){e.preventDefault();backspace();return;}
-  if(e.key==="Tab"){e.preventDefault();pending="";advance(1);render();highlightClues();return;}
-  if(e.key===" "){e.preventDefault();
-    // toggle direction
+  if(e.key==="Tab"){e.preventDefault();pending="";advance(1);render();syncClueHighlight();return;}
+  if(e.key===" "){
+    e.preventDefault();
+    pending="";  /* FIX #8 */
     const k=wordKeys(active.placement)[active.idx];
-    const through=wordsThrough(k);
-    if(through.length>1){
-      const other=through.find(p=>p!==active.placement);
-      if(other){active={placement:other,idx:wordKeys(other).indexOf(k)};pending="";}
+    const thru=wordsAt(k);
+    if(thru.length>1){
+      const oth=thru.find(p=>p!==active.placement);
+      if(oth){active={placement:oth,idx:wordKeys(oth).indexOf(k)};}
     }
-    render();highlightClues();updateClueBar();return;
+    render();syncClueHighlight();updateClueBar();return;
   }
-  if(e.key==="ArrowRight"||e.key==="ArrowDown"){pending="";advance(1);render();highlightClues();return;}
-  if(e.key==="ArrowLeft"||e.key==="ArrowUp"){pending="";active.idx=Math.max(0,active.idx-1);render();highlightClues();return;}
-  if(/^[a-zA-Z']$/.test(e.key)) composeKey(e.key.toLowerCase());
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){pending="";advanceSmart(1);render();syncClueHighlight();return;}
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp"){pending="";active.idx=Math.max(0,active.idx-1);render();syncClueHighlight();return;}
+  if(/^[a-zA-Z']$/.test(e.key))composeKey(e.key.toLowerCase());
 });
 
-// Language selector
+/* Language selector */
 const sel=document.getElementById("lang");
 Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=o.textContent=n;sel.appendChild(o);});
 sel.addEventListener("change",()=>newPuzzle(sel.value));
 
-// Boot
+/* Boot */
 newPuzzle("Shona");
 </script>
 </body>
