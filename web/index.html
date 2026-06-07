@@ -261,12 +261,95 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 .keypad .kutil{color:var(--accent2);border-color:rgba(129,140,248,.25);}
 
 /* ── animations ── */
-@keyframes shake{
-  0%,100%{transform:translateX(0);}
-  20%{transform:translateX(-3px);}
-  60%{transform:translateX(3px);}
-}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}}
 .sq.live.bad{animation:shake .25s ease .15s;}
+
+/* ── complexity badge (shown in clue-bar area) ── */
+.cx-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:.74rem;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;
+}
+.cx-badge.easy  {background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3);}
+.cx-badge.medium{background:rgba(129,140,248,.15);color:#818cf8;border:1px solid rgba(129,140,248,.3);}
+.cx-badge.hard  {background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3);}
+
+/* ── countdown warning ── */
+#timer.warn{color:var(--warn);font-weight:700;}
+#timer.danger{color:var(--bad);font-weight:700;animation:shake .4s infinite;}
+
+/* ── settings drawer ── */
+.settings-drawer{
+  position:fixed;top:0;right:0;width:min(320px,95vw);height:100vh;
+  background:var(--bg2);border-left:1px solid var(--border2);
+  z-index:400;overflow-y:auto;padding:20px;
+  transform:translateX(100%);transition:transform .28s ease;
+  display:flex;flex-direction:column;gap:0;
+}
+.settings-drawer.open{transform:translateX(0);}
+.sd-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:20px;
+}
+.sd-header h2{font-size:1rem;font-weight:700;letter-spacing:-.3px;}
+.sd-close{
+  font:inherit;background:transparent;border:none;color:var(--muted);
+  cursor:pointer;font-size:1.2rem;padding:4px 8px;border-radius:6px;
+}
+.sd-close:hover{color:var(--ink);}
+.sd-section{margin-bottom:20px;}
+.sd-section legend,.sd-section h3{
+  font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--accent);font-weight:700;margin-bottom:10px;display:block;
+}
+/* segmented radio control */
+.seg-ctrl{display:flex;border-radius:9px;overflow:hidden;border:1px solid var(--border2);}
+.seg-ctrl label{
+  flex:1;text-align:center;cursor:pointer;
+  padding:7px 10px;font-size:.8rem;transition:background .15s,color .15s;
+  border-right:1px solid var(--border2);color:var(--muted);
+}
+.seg-ctrl label:last-child{border-right:none;}
+.seg-ctrl input{display:none;}
+.seg-ctrl input:checked+span{display:block;}
+.seg-ctrl label:has(input:checked){background:var(--surface2);color:var(--ink);font-weight:600;}
+/* range slider */
+.slider-row{display:flex;align-items:center;gap:10px;}
+.slider-row input[type=range]{
+  flex:1;-webkit-appearance:none;height:4px;
+  background:var(--surface2);border-radius:2px;outline:none;cursor:pointer;
+}
+.slider-row input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);cursor:pointer;
+}
+.slider-row .slv{
+  font-size:.88rem;font-weight:700;color:var(--ink);
+  min-width:28px;text-align:right;font-variant-numeric:tabular-nums;
+}
+/* number input */
+.sd-section input[type=number]{
+  background:var(--surface2);border:1px solid var(--border2);color:var(--ink);
+  padding:6px 10px;border-radius:8px;font:inherit;font-size:.85rem;width:80px;
+}
+/* hint budget display */
+.hint-budget{
+  font-size:.8rem;color:var(--muted);margin-top:6px;
+}
+/* settings apply button */
+.sd-apply{
+  font:inherit;color:var(--ink);cursor:pointer;width:100%;
+  background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(129,140,248,.2));
+  border:1px solid rgba(52,211,153,.35);
+  padding:10px;border-radius:10px;font-size:.88rem;font-weight:600;
+  transition:border-color .15s,background .15s;margin-top:auto;
+}
+.sd-apply:hover{border-color:var(--accent);}
+/* settings backdrop */
+.sd-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:399;
+}
+.sd-backdrop.open{display:block;}
 </style>
 </head>
 <body>
@@ -297,6 +380,8 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
       <span>⏱</span>
     </label>
     <button id="btnClear" class="danger">Clear</button>
+    <div class="sep" role="separator"></div>
+    <button id="btnSettings" title="Puzzle settings (timer, word count, difficulty)" aria-haspopup="dialog">⚙ Settings</button>
   </div>
 </header>
 
@@ -306,6 +391,8 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
   <span class="cb-dir" id="cbDir"></span>
   <span class="cb-text" id="cbText">Select a square or clue to begin</span>
   <span class="cb-len" id="cbLen"></span>
+  <span class="cx-badge medium" id="cxBadge" title="Current difficulty">Medium</span>
+  <span style="font-size:.78rem;color:var(--dim)" id="hintBudgetBadge"></span>
 </div>
 
 <!-- Status + timer -->
@@ -372,6 +459,57 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 
 <!-- On-screen grapheme keypad (all 44×44 touch targets — WCAG 2.5.5) -->
 <div class="keypad" id="keypad" aria-label="Grapheme keypad" role="toolbar"></div>
+
+<!-- Settings backdrop -->
+<div class="sd-backdrop" id="sdBackdrop" aria-hidden="true"></div>
+
+<!-- Settings drawer — slide in from right -->
+<aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-label="Puzzle settings">
+  <div class="sd-header">
+    <h2>⚙ Settings</h2>
+    <button class="sd-close" id="sdClose" aria-label="Close settings">✕</button>
+  </div>
+
+  <!-- A. Timer -->
+  <div class="sd-section">
+    <h3>⏱ Timer</h3>
+    <div class="seg-ctrl" role="radiogroup" aria-label="Timer mode">
+      <label><input type="radio" name="timerMode" value="up" id="tmUp"><span>Count up</span></label>
+      <label><input type="radio" name="timerMode" value="down" id="tmDown"><span>Countdown</span></label>
+      <label><input type="radio" name="timerMode" value="off" id="tmOff"><span>Hidden</span></label>
+    </div>
+    <div id="countdownRow" style="margin-top:10px;display:none;align-items:center;gap:8px;">
+      <span style="font-size:.82rem;color:var(--muted);">Time limit</span>
+      <input type="number" id="countdownMins" min="1" max="60" value="5" aria-label="Countdown minutes"/>
+      <span style="font-size:.82rem;color:var(--dim);">min</span>
+    </div>
+  </div>
+
+  <!-- B. Word count -->
+  <div class="sd-section">
+    <h3>🔢 Word Count</h3>
+    <div class="slider-row">
+      <input type="range" id="wordCountSlider" min="4" max="12" value="8" step="1" aria-label="Number of words"/>
+      <span class="slv" id="wordCountVal">8</span>
+    </div>
+    <div style="font-size:.78rem;color:var(--dim);margin-top:4px;">Words the generator will attempt to place</div>
+  </div>
+
+  <!-- C. Complexity / Difficulty -->
+  <div class="sd-section">
+    <h3>🎯 Difficulty</h3>
+    <div class="seg-ctrl" role="radiogroup" aria-label="Difficulty level">
+      <label><input type="radio" name="complexity" value="easy" id="cxEasy"><span>Easy</span></label>
+      <label><input type="radio" name="complexity" value="medium" id="cxMedium" checked><span>Medium</span></label>
+      <label><input type="radio" name="complexity" value="hard" id="cxHard"><span>Hard</span></label>
+    </div>
+    <div class="hint-budget" id="sdHintDesc" style="margin-top:8px;">
+      Medium: all word lengths · standard hints · autocheck optional
+    </div>
+  </div>
+
+  <button class="sd-apply" id="sdApply">Apply &amp; New Puzzle</button>
+</aside>
 
 <script>
 "use strict";
@@ -461,8 +599,25 @@ class Language{
    ============================================================ */
 const AC="across",DN="down";
 
-function generate(entries,lang,attempt=0){
-  const toks=entries.map(e=>({e,t:lang.tokenize(e[0])})).filter(x=>x.t.length);
+/**
+ * generate(entries, lang, attempt, wordTarget, maxTokenLen)
+ * wordTarget : how many words to aim for (from GameConfig.wordTarget)
+ * maxTokenLen: complexity filter — Easy caps at 5 tokens, others uncapped
+ */
+function generate(entries,lang,attempt=0,wordTarget=8,maxTokenLen=99){
+  /* Filter by complexity word-length, then supply 2× target so generator
+     has enough candidates without making the puzzle too sparse */
+  const pool=entries
+    .map(e=>({e,t:lang.tokenize(e[0])}))
+    .filter(x=>x.t.length&&x.t.length<=maxTokenLen);
+  /* For hard mode, prefer longer words (sort descending, skip short) */
+  const sorted=pool.slice().sort((a,b)=>b.t.length-a.t.length);
+  /* Hard: take longest words first up to 2×target; Easy: take shortest */
+  const candidates=maxTokenLen<=5
+    ? sorted.slice().reverse().slice(0,wordTarget*2)   // Easy: shortest first
+    : sorted.slice(0,wordTarget*2);                     // Med/Hard: longest first
+  const toks=candidates.length>=4?candidates:pool;      // fallback to full pool
+
   toks.sort((a,b)=>b.t.length-a.t.length);
   const cells=new Map(),placements=[];
   const K=(r,c)=>r+","+c;
@@ -514,9 +669,10 @@ function generate(entries,lang,attempt=0){
     rem=left;
   }
 
-  /* FIX #5: if fewer than 4 words placed and we have retries left, shuffle and retry */
-  if(placements.length<4&&attempt<5){
-    return generate(shuffle(entries),lang,attempt+1);
+  /* Retry if below target word count (up to 5 attempts with fresh shuffle) */
+  const minWords=Math.min(4,wordTarget);
+  if(placements.length<minWords&&attempt<5){
+    return generate(shuffle(entries),lang,attempt+1,wordTarget,maxTokenLen);
   }
 
   /* Number start-cells in reading order */
@@ -530,13 +686,44 @@ function generate(entries,lang,attempt=0){
 }
 
 /* ============================================================
-   4. STATE
+   4. CONFIG — single source of truth, persisted to localStorage
+   ============================================================ */
+const CONFIG_KEY="mhanga_v1_config";
+const COMPLEXITY_RULES={
+  easy:  {label:"Easy",  maxLen:5, hintBudget:Infinity, autoCheckDefault:true,  checkAnytime:true,  desc:"Short words · unlimited hints · autocheck on"},
+  medium:{label:"Medium",maxLen:99,hintBudget:Infinity, autoCheckDefault:false, checkAnytime:true,  desc:"All word lengths · standard hints · autocheck optional"},
+  hard:  {label:"Hard",  maxLen:99,hintBudget:1,        autoCheckDefault:false, checkAnytime:false, desc:"Long words preferred · 1 hint only · check only when fully filled"}
+};
+
+const GameConfig={
+  timerMode:"up",       // "up" | "down" | "off"
+  countdownMins:5,      // used when timerMode==="down"
+  wordTarget:8,         // 4–12
+  complexity:"medium",
+
+  load(){
+    try{const s=localStorage.getItem(CONFIG_KEY);if(s)Object.assign(this,JSON.parse(s));}
+    catch(e){/* ignore — use defaults */}
+    return this;
+  },
+  save(){
+    try{localStorage.setItem(CONFIG_KEY,JSON.stringify({
+      timerMode:this.timerMode,countdownMins:this.countdownMins,
+      wordTarget:this.wordTarget,complexity:this.complexity
+    }));}catch(e){}
+  }
+};
+GameConfig.load();
+
+/* ============================================================
+   4b. GAME STATE
    ============================================================ */
 let lang,puzzle,guesses,pencilSet,revealed,bounds,active=null;
 let autochecking=false,pencilMode=false,timerOn=true;
 let timerSec=0,timerInterval=null,cleanSolve=true,streak=0;
-let pending="";     // IME compose buffer
-let renderTimer=null; // debounce handle (FIX #9)
+let hintsUsed=0;        // resets each puzzle; enforces hintBudget
+let pending="";         // IME compose buffer
+let renderTimer=null;   // debounce handle
 
 function shuffle(a){
   a=a.slice();
@@ -548,17 +735,49 @@ const CK=(r,c)=>r+","+c;
 function newPuzzle(langName){
   const data=LANGUAGES[langName];
   lang=new Language(data.config);
-  puzzle=generate(shuffle(data.words),lang);
+  const rules=COMPLEXITY_RULES[GameConfig.complexity];
+
+  /* Generate with word-count target and complexity word-length cap */
+  puzzle=generate(shuffle(data.words),lang,0,GameConfig.wordTarget,rules.maxLen);
+
   guesses=new Map();pencilSet=new Set();revealed=new Set();
+  hintsUsed=0;
   for(const k of puzzle.cells.keys())guesses.set(k,"");
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
   bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
   active=null;pending="";cleanSolve=true;
+
+  /* Apply complexity defaults */
+  autochecking=rules.autoCheckDefault;
+  document.getElementById("cbAuto").checked=autochecking;
+  document.getElementById("lblAuto").classList.toggle("on",autochecking);
+
+  /* Sync timer mode from config */
+  timerOn=GameConfig.timerMode!=="off";
+  document.getElementById("timer").classList.toggle("hidden",!timerOn);
   resetTimer();startTimer();
+
+  /* Update complexity badge */
+  const badge=document.getElementById("cxBadge");
+  badge.textContent=rules.label;
+  badge.className="cx-badge "+GameConfig.complexity;
+
+  /* Update hint-budget badge */
+  updateHintBudgetBadge();
   updateProgress();
-  setStatus(`${puzzle.placements.length} words · select a square to begin`,"info");
+
+  const placed=puzzle.placements.length,target=GameConfig.wordTarget;
+  setStatus(`${placed} word${placed!==1?"s":""} placed (target: ${target}) · ${rules.label} · select a square to begin`,"info");
   render();renderClues();renderKeypad();updateClueBar();
+}
+
+function updateHintBudgetBadge(){
+  const rules=COMPLEXITY_RULES[GameConfig.complexity];
+  const el=document.getElementById("hintBudgetBadge");
+  if(rules.hintBudget===Infinity){el.textContent="";return;}
+  const left=Math.max(0,rules.hintBudget-hintsUsed);
+  el.textContent=`${left} hint${left!==1?"s":""} left`;
 }
 
 function wordKeys(p){
@@ -775,34 +994,57 @@ function schedRender(){
 }
 
 /* ============================================================
-   8. CHECK
+   8. CHECK (Hard mode requires all cells filled before checking)
    ============================================================ */
 function checkManual(){
-  let wrong=0,filled=0;
+  const rules=COMPLEXITY_RULES[GameConfig.complexity];
+  let wrong=0,filled=0,total=guesses.size;
   for(const[k,v]of guesses){if(v){filled++;if(v!==puzzle.cells.get(k))wrong++;}}
   if(!filled){setStatus("Nothing filled yet — select a clue to start.");return;}
+  /* Hard: block check until puzzle fully filled */
+  if(!rules.checkAnytime&&filled<total){
+    setStatus(`Hard mode: fill all ${total} cells before checking. (${total-filled} empty)`,"err");
+    return;
+  }
   if(wrong)setStatus(`${wrong} error${wrong>1?"s":""} found — keep going.`,"err");
   else setStatus("All filled cells correct ✓","info");
   render();
 }
 
 /* ============================================================
-   9. REVEAL / HINT (3 levels)
+   9. REVEAL / HINT (3 levels, gated by complexity hint budget)
    ============================================================ */
+function hintAllowed(){
+  const rules=COMPLEXITY_RULES[GameConfig.complexity];
+  if(hintsUsed>=rules.hintBudget){
+    setStatus(`No hints left on ${rules.label} difficulty.`,"err");
+    return false;
+  }
+  return true;
+}
+
 function revealLetter(){
   if(!active){setStatus("Select a cell first.");return;}
+  if(!hintAllowed())return;
   const k=wordKeys(active.placement)[active.idx];
   guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);
-  cleanSolve=false;advance(1);schedRender();
+  hintsUsed++;cleanSolve=false;
+  updateHintBudgetBadge();
+  advance(1);schedRender();
 }
 function revealWord(){
   if(!active){setStatus("Select a word first.");return;}
+  if(!hintAllowed())return;
   wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});
-  cleanSolve=false;schedRender();
+  hintsUsed++;cleanSolve=false;
+  updateHintBudgetBadge();
+  schedRender();
 }
 function revealPuzzle(){
   for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}
-  cleanSolve=false;schedRender();
+  hintsUsed++;cleanSolve=false;
+  updateHintBudgetBadge();
+  schedRender();
   setStatus("Puzzle revealed — try again for a clean solve!");
 }
 
@@ -826,14 +1068,49 @@ function onWin(){
 }
 
 /* ============================================================
-   11. TIMER
+   11. TIMER  (count-up | countdown | hidden)
    ============================================================ */
-function resetTimer(){timerSec=0;stopTimer();tick();}
-function startTimer(){if(!timerOn)return;timerInterval=setInterval(()=>{timerSec++;tick();},1000);}
+function resetTimer(){
+  timerSec=GameConfig.timerMode==="down"
+    ? GameConfig.countdownMins*60  // start from limit for countdown
+    : 0;
+  stopTimer();tick();
+  const el=document.getElementById("timer");
+  el.classList.remove("warn","danger");
+}
+
+function startTimer(){
+  if(!timerOn||GameConfig.timerMode==="off")return;
+  timerInterval=setInterval(()=>{
+    if(GameConfig.timerMode==="down"){
+      timerSec--;
+      if(timerSec<=0){timerSec=0;tick();stopTimer();onTimeUp();return;}
+    }else{
+      timerSec++;
+    }
+    tick();
+  },1000);
+}
+
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
+
 function tick(){
-  const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
-  document.getElementById("timer").textContent=`${m}:${s}`;
+  const el=document.getElementById("timer");
+  if(GameConfig.timerMode==="off"){el.textContent="";return;}
+  const disp=GameConfig.timerMode==="down"?timerSec:timerSec;
+  const m=String(Math.floor(disp/60)).padStart(2,"0"),s=String(disp%60).padStart(2,"0");
+  el.textContent=`${m}:${s}`;
+  /* Countdown warning colours */
+  if(GameConfig.timerMode==="down"){
+    const limit=GameConfig.countdownMins*60;
+    el.classList.toggle("warn",disp<=limit*0.25&&disp>limit*0.1);
+    el.classList.toggle("danger",disp<=limit*0.1);
+  }
+}
+
+function onTimeUp(){
+  setStatus("⏰ Time's up! Revealing puzzle…","err");
+  revealPuzzle();
 }
 
 /* ============================================================
@@ -926,6 +1203,76 @@ document.addEventListener("keydown",e=>{
 const sel=document.getElementById("lang");
 Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=o.textContent=n;sel.appendChild(o);});
 sel.addEventListener("change",()=>newPuzzle(sel.value));
+
+/* ============================================================
+   14. SETTINGS DRAWER
+   Wire: open/close, sync inputs ↔ GameConfig, apply & save
+   ============================================================ */
+const HINT_DESCS={
+  easy:  "Easy: words ≤5 graphemes · unlimited hints · autocheck on by default",
+  medium:"Medium: all word lengths · unlimited hints · autocheck optional",
+  hard:  "Hard: longer words preferred · 1 hint letter max · check after full fill only"
+};
+
+function openSettings(){
+  /* Sync UI to current config before showing */
+  document.querySelector(`input[name=timerMode][value="${GameConfig.timerMode}"]`).checked=true;
+  document.getElementById("countdownMins").value=GameConfig.countdownMins;
+  document.getElementById("countdownRow").style.display=GameConfig.timerMode==="down"?"flex":"none";
+  document.getElementById("wordCountSlider").value=GameConfig.wordTarget;
+  document.getElementById("wordCountVal").textContent=GameConfig.wordTarget;
+  document.querySelector(`input[name=complexity][value="${GameConfig.complexity}"]`).checked=true;
+  document.getElementById("sdHintDesc").textContent=HINT_DESCS[GameConfig.complexity];
+  document.getElementById("settingsDrawer").classList.add("open");
+  document.getElementById("sdBackdrop").classList.add("open");
+  document.getElementById("sdClose").focus();
+}
+
+function closeSettings(){
+  document.getElementById("settingsDrawer").classList.remove("open");
+  document.getElementById("sdBackdrop").classList.remove("open");
+}
+
+function readSettingsFromUI(){
+  GameConfig.timerMode=document.querySelector("input[name=timerMode]:checked")?.value||"up";
+  GameConfig.countdownMins=Math.max(1,Math.min(60,parseInt(document.getElementById("countdownMins").value)||5));
+  GameConfig.wordTarget=parseInt(document.getElementById("wordCountSlider").value)||8;
+  GameConfig.complexity=document.querySelector("input[name=complexity]:checked")?.value||"medium";
+  GameConfig.save();
+}
+
+/* Open / Close */
+document.getElementById("btnSettings").addEventListener("click",openSettings);
+document.getElementById("sdClose").addEventListener("click",closeSettings);
+document.getElementById("sdBackdrop").addEventListener("click",closeSettings);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();});
+
+/* Timer mode radios — show/hide countdown input */
+document.querySelectorAll("input[name=timerMode]").forEach(r=>r.addEventListener("change",()=>{
+  document.getElementById("countdownRow").style.display=r.value==="down"?"flex":"none";
+}));
+
+/* Word count slider — live label */
+document.getElementById("wordCountSlider").addEventListener("input",function(){
+  document.getElementById("wordCountVal").textContent=this.value;
+});
+
+/* Complexity radios — update description */
+document.querySelectorAll("input[name=complexity]").forEach(r=>r.addEventListener("change",()=>{
+  document.getElementById("sdHintDesc").textContent=HINT_DESCS[r.value]||"";
+}));
+
+/* Apply & New Puzzle */
+document.getElementById("sdApply").addEventListener("click",()=>{
+  readSettingsFromUI();
+  closeSettings();
+  newPuzzle(document.getElementById("lang").value);
+});
+
+/* Keyboard shortcut: Cmd+, or Ctrl+, opens settings */
+document.addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}
+});
 
 /* Boot */
 newPuzzle("Shona");
