@@ -394,6 +394,11 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
   <span id="hintBudgetBadge"></span>
 </div>
 
+<!-- Beta disclaimer (shown only for Beta languages) -->
+<div id="betaNote" style="display:none;width:100%;max-width:1100px;margin-bottom:8px;padding:7px 14px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:10px;font-size:.78rem;color:var(--warn);">
+  ⚠ <b>Zulu is in Beta.</b> Vocabulary &amp; clues are pending native-speaker review — play for fun, but verify spellings before relying on them for study.
+</div>
+
 <!-- Status + timer -->
 <div class="status-bar">
   <span class="status-msg" id="statusMsg" role="status" aria-live="polite"></span>
@@ -530,7 +535,6 @@ const LANGUAGES={
   Shona:{
     config:{language:"Shona",atomic_graphemes:["ch","sh","sv","zv","ng","mb","nd","nj","ny","nz","mh","pf","ts","dz","vh"],ignore_casing:true,strip_diacritics:false,preserve_marks:[]},
     words:[
-      // family
       ["amai","Mubereki wechikadzi","mother","a·mai","family"],
       ["baba","Mubereki wechirume","father","ba·ba","family"],
       ["mwana","Mwana muduku ari kumba","child","mwa·na","family"],
@@ -544,7 +548,6 @@ const LANGUAGES={
       ["muzukuru","Muzukuru wangu ane makore gumi","grandchild / niece / nephew","mu·zu·ku·ru","family"],
       ["muroora","Muroora wake anoita basa","daughter-in-law","mu·roo·ra","family"],
       ["hanzvadzi","Hanzvadzi yangu iri kuchikoro","sibling","han·zva·dzi","family"],
-      // animals
       ["mombe","Mombe inodya uswa","cow","mo·mbe","animals"],
       ["imbwa","Imbwa inoruma","dog","im·bwa","animals"],
       ["katsi","Katsi inobata mbeva","cat","ka·tsi","animals"],
@@ -559,7 +562,6 @@ const LANGUAGES={
       ["hove","Hove dzinogara mumvura","fish","ho·ve","animals"],
       ["gudo","Gudo rinogara pamawere","baboon","gu·do","animals"],
       ["soko","Soko rinogara mumiti","monkey","so·ko","animals"],
-      // food
       ["sadza","Sadza ndicho chikafu chedu","thick maize porridge","sa·dza","food"],
       ["nyama","Nyama yemombe inonaka","meat","nya·ma","food"],
       ["muriwo","Muriwo unodya madekwana","vegetables / relish","mu·ri·wo","food"],
@@ -570,7 +572,6 @@ const LANGUAGES={
       ["bota","Bota rinoitwa mangwana","thin porridge","bo·ta","food"],
       ["nyimo","Nyimo dzinobikwa","bambara nuts","nyi·mo","food"],
       ["tsanga","Mbeu yezvirimwa","grain / seed","tsa·nga","food"],
-      // nature
       ["muti","Muti une mashizha","tree","mu·ti","nature"],
       ["nyika","Nyika yedu inonaka","country / land","nyi·ka","nature"],
       ["rwizi","Rwizi runoyerera","river","rwi·zi","nature"],
@@ -586,7 +587,6 @@ const LANGUAGES={
       ["mhepo","Mhepo inobhururuka","wind / air","mhe·po","nature"],
       ["gomo","Gomo redu rine chando","mountain / hill","go·mo","nature"],
       ["sango","Sango rine miti mizhinji","forest / bush","sa·ngo","nature"],
-      // places
       ["musha","Musha wedu uri kunyika","home village","mu·sha","places"],
       ["chikoro","Nzvimbo inodzidzirwa vana","school","chi·ko·ro","places"],
       ["nzira","Nzira inoenda kumusha","road / path","nzi·ra","places"],
@@ -596,7 +596,6 @@ const LANGUAGES={
       ["chipatara","Chipatara chine chiremba","hospital","chi·pa·ta·ra","places"],
       ["chechi","Chechi ine vanhu vekunamata","church","che·chi","places"],
       ["bonde","Bonde rine uswa hurefu","valley","bo·nde","places"],
-      // body
       ["musoro","Musoro ndewako","head","mu·so·ro","body"],
       ["moyo","Moyo unorova nguva dzose","heart","mo·yo","body"],
       ["ruoko","Ruoko rwunobata zvinhu","hand / arm","ruo·ko","body"],
@@ -607,7 +606,6 @@ const LANGUAGES={
       ["tsoka","Tsoka dzinofamba pasi","feet","tso·ka","body"],
       ["chipfuva","Chipfuva chine moyo mukati","chest","chi·pfu·va","body"],
       ["bvudzi","Bvudzi riri pamusoro","hair","bvu·dzi","body"],
-      // time
       ["mangwanani","Mangwanani tinosimuka","morning","ma·ngwa·na·ni","time"],
       ["masikati","Masikati zuva rinopisa","afternoon","ma·si·ka·ti","time"],
       ["usiku","Usiku tinorara","night","u·si·ku","time"],
@@ -616,7 +614,6 @@ const LANGUAGES={
       ["nezuro","Nezuro takaenda","yesterday","ne·zu·ro","time"],
       ["gore","Gore rino rine mvura","year","go·re","time"],
       ["svondo","Svondo tinonamata","week / Sunday","svo·ndo","time"],
-      // values
       ["rudo","Rudo runobatanidza vanhu","love","ru·do","values"],
       ["unhu","Unhu ndohushamwari","ubuntu / humanity","u·nhu","values"],
       ["simba","Simba rinobva muMwari","strength","si·mba","values"],
@@ -625,7 +622,6 @@ const LANGUAGES={
       ["kutenda","Kutenda kunofadza","gratitude / faith","ku·te·nda","values"],
       ["ngoma","Chiridzwa chinorohwa","drum","ngo·ma","values"],
       ["mbira","Chiridzwa chine simbi","thumb piano","mbi·ra","values"],
-      // household
       ["imba","Imba yedu ine makamuri","house / home","i·mba","household"],
       ["gonhi","Gonhi riri kuvhurika","door","go·nhi","household"],
       ["hwindo","Hwindo rine girimisi","window","hwi·ndo","household"],
@@ -635,7 +631,6 @@ const LANGUAGES={
       ["jiko","Jiko rinopisa nemoto","stove / fireplace","ji·ko","household"],
       ["ndiro","Ndiro ine sadza","plate / dish","ndi·ro","household"],
       ["mubhedha","Mubhedha une mirinda","bed","mu·bhe·dha","household"],
-      // numbers
       ["piri","Piri ndiwo nhamba yechipiri","two","pi·ri","numbers"],
       ["tatu","Tatu ndiwo nhamba yechitatu","three","ta·tu","numbers"],
       ["shanu","Shanu ndiwo nhamba yechishanu","five","sha·nu","numbers"],
@@ -643,13 +638,78 @@ const LANGUAGES={
       ["nomwe","Nomwe ndiwo nhamba yechinomwe","seven","no·mwe","numbers"],
       ["sere","Sere ndiwo nhamba yechisere","eight","se·re","numbers"],
       ["gumi","Gumi ndiwo nhamba yechigumi","ten","gu·mi","numbers"],
-      ["zana","Zana ndiwo nhamba zana","hundred","za·na","numbers"]
+      ["zana","Zana ndiwo nhamba zana","hundred","za·na","numbers"],
+      ["mzukuru","Mwana wemwana wako","grandchild","mu·zu·ku·ru","family"],
+      ["babamukuru","Mukoma wababa vako","father's older brother / uncle","ba·ba·mu·ku·ru","family"],
+      ["babamunini","Munin'ina wababa vako","father's younger brother / uncle","ba·ba·mu·ni·ni","family"],
+      ["maiguru","Mukadzi wababamukuru","aunt / co-wife (senior)","ma·i·gu·ru","family"],
+      ["mainini","Munin'ina waamai","aunt / mother's younger sister","ma·i·ni·ni","family"],
+      ["mukwasha","Murume wemwanasikana","son-in-law","mu·kwa·sha","family"],
+      ["mwanasikana","Mwana wechikadzi","daughter","mwa·na·si·ka·na","family"],
+      ["mwanakomana","Mwana wechirume","son","mwa·na·ko·ma·na","family"],
+      ["mhuru","Mwana wemombe","calf","mhu·ru","animals"],
+      ["bhiza","Mhuka inotakura vanhu","horse","bhi·za","animals"],
+      ["dhongi","Mhuka inotakura mitoro","donkey","dho·ngi","animals"],
+      ["nyoka","Inokambaira pasi","snake","nyo·ka","animals"],
+      ["datya","Rinosvetuka mumvura","frog","da·tya","animals"],
+      ["nyuchi","Inogadzira uchi","bee","nyu·chi","animals"],
+      ["nhunzi","Inomhara pazvokudya","fly","nhu·nzi","animals"],
+      ["gonzo","Mbeva huru yemumba","rat","go·nzo","animals"],
+      ["ngwena","Mhuka huru yemurwizi","crocodile","ngwe·na","animals"],
+      ["mhembwe","Mhuka diki yesango","duiker / antelope","mhe·mbwe","animals"],
+      ["nzungu","Inodyiwa, inoita dovi","peanut / groundnut","nzu·ngu","food"],
+      ["mupunga","Zvokudya zvichena zvinobikwa","rice","mu·pu·nga","food"],
+      ["nyemba","Tsanga dzemumunda","cowpeas / beans","nye·mba","food"],
+      ["manhanga","Muriwo unobva kumudzimba","pumpkin","ma·nha·nga","food"],
+      ["muboora","Mashizha emanhanga anodyiwa","pumpkin leaves","mu·bo·o·ra","food"],
+      ["nyevhe","Muriwo wesango unodyiwa","spider plant (relish)","nye·vhe","food"],
+      ["mufushwa","Muriwo wakaomeswa","dried vegetables","mu·fu·shwa","food"],
+      ["maputi","Chibage chakakangwa","roasted maize","ma·pu·ti","food"],
+      ["mvuu","Mhuka huru inogara mumvura","hippopotamus","mvu·u","animals"],
+      ["munyu","Unoisa kuti zvokudya zvinake","salt","mu·nyu","food"],
+      ["uchi","Zvinotapira zvinobva kunyuchi","honey","u·chi","food"],
+      ["mafuta","Anoshandiswa kubika","oil / fat","ma·fu·ta","food"],
+      ["chingwa","Chinodyiwa mangwanani","bread","chi·ngwa","food"],
+      ["doro","Hwahwa hwechivanhu","beer","do·ro","food"],
+      ["rurimi","Runoshandiswa kuravira","tongue","ru·ri·mi","body"],
+      ["ziso","Rinoshandiswa kuona","eye","zi·so","body"],
+      ["chiuno","Pakati pemuviri","waist","chi·u·no","body"],
+      ["bendekete","Pamusoro peruoko","shoulder","be·nde·ke·te","body"],
+      ["chibvi","Panopinda gumbo","knee","chi·bvi","body"],
+      ["munwe","Chikamu cheruoko","finger","mu·nwe","body"],
+      ["ropa","Zvitsvuku zviri mumuviri","blood","ro·pa","body"],
+      ["ganda","Rinofukidza muviri","skin","ga·nda","body"],
+      ["chitubu","Panobuda mvura yepasi","spring / fountain","chi·tu·bu","nature"],
+      ["dziva","Mvura yakamira pasango","pool / pond","dzi·va","nature"],
+      ["jecha","Zvidiki zvepasi pedyo nerwizi","sand","je·cha","nature"],
+      ["ivhu","Pasi panodyarwa zvirimwa","soil / earth","i·vhu","nature"],
+      ["chando","Kutonhora kwakanyanya","cold / frost","cha·ndo","nature"],
+      ["mhute","Inofukidza pasango mangwanani","mist / fog","mhu·te","nature"],
+      ["dutu","Mhepo ine simba","storm","du·tu","nature"],
+      ["bani","Nzvimbo yakati sandara","plain / open field","ba·ni","nature"],
+      ["chikomo","Gomo diki","hill","chi·ko·mo","nature"],
+      ["dunhu","Nzvimbo yakacherwa","district / region","du·nhu","places"],
+      ["musika","Panotengeswa zvinhu","market","mu·si·ka","places"],
+      ["mabhuku","Zvinoverengwa kuchikoro","books","ma·bhu·ku","household"],
+      ["poto","Inoshandiswa kubika","pot","po·to","household"],
+      ["hari","Mudziyo wevhu wokubika","clay pot","ha·ri","household"],
+      ["banga","Chinoshandiswa kucheka","knife","ba·nga","household"],
+      ["demo","Chinoshandiswa kutema huni","axe","de·mo","household"],
+      ["badza","Chinoshandiswa kurima","hoe","ba·dza","household"],
+      ["rusero","Chinoshandiswa kuzunza upfu","winnowing basket","ru·se·ro","household"],
+      ["tswanda","Dengu rokutakura zvinhu","basket","tswa·nda","household"],
+      ["gumbeze","Chokufuga pakurara","blanket","gu·mbe·ze","household"],
+      ["ina","Nhamba inotevera tatu","four","i·na","numbers"],
+      ["chokwadi","Chinhu chisina manyepo","truth","cho·kwa·di","values"],
+      ["runyararo","Kusava nehondo","peace","ru·nya·ra·ro","values"],
+      ["tsitsi","Kunzwira mumwe urombo","mercy / compassion","tsi·tsi","values"],
+      ["ushingi","Kuva nesimba remwoyo","courage / bravery","u·shi·ngi","values"],
+      ["nguva","Zvinoyerwa newachi","time","ngu·va","time"]
     ]
   },
   Swahili:{
     config:{language:"Swahili",atomic_graphemes:["ng'","ch","sh","gh","kh","th","dh","ng","ny","mb","nd"],ignore_casing:true,strip_diacritics:true,preserve_marks:["'"]},
     words:[
-      // family
       ["mama","Mama yangu anapenda familia","mother","ma·ma","family"],
       ["baba","Baba yangu anafanya kazi","father","ba·ba","family"],
       ["mtoto","Mtoto mdogo anacheza","child","mto·to","family"],
@@ -663,7 +723,6 @@ const LANGUAGES={
       ["mume","Mume wake anafanya kazi","husband","mu·me","family"],
       ["ndugu","Ndugu yangu yupo hapa","sibling / relative","ndu·gu","family"],
       ["mjukuu","Mjukuu wangu ni mdogo","grandchild","mju·kuu","family"],
-      // animals
       ["ng'ombe","Ng'ombe wangu ana nguvu","cow","ng'·o·mbe","animals"],
       ["mbwa","Mbwa wangu ni mzuri","dog","mbwa","animals"],
       ["paka","Paka anakimbia haraka","cat","pa·ka","animals"],
@@ -679,7 +738,6 @@ const LANGUAGES={
       ["nyoka","Nyoka anatambaa ardhini","snake","nyo·ka","animals"],
       ["farasi","Farasi anakimbia kwa kasi","horse","fa·ra·si","animals"],
       ["kondoo","Kondoo ana manyoya mazuri","sheep","ko·ndoo","animals"],
-      // food
       ["chakula","Chakula hiki ni kitamu","food","cha·ku·la","food"],
       ["nyama","Nyama ya ng'ombe ni nzuri","meat","nya·ma","food"],
       ["ugali","Ugali ni chakula cha Afrika","stiff porridge","u·ga·li","food"],
@@ -695,7 +753,6 @@ const LANGUAGES={
       ["ndizi","Ndizi ni tamu sana","banana","ndi·zi","food"],
       ["embe","Embe ni tamu wakati wa kiangazi","mango","e·mbe","food"],
       ["mchele","Mchele unapikwa na maji","uncooked rice","mche·le","food"],
-      // nature
       ["mti","Mti huu una matunda","tree","mti","nature"],
       ["nchi","Nchi yetu ni nzuri sana","country / land","nchi","nature"],
       ["mlima","Mlima mrefu una theluji","mountain","mli·ma","nature"],
@@ -711,7 +768,6 @@ const LANGUAGES={
       ["ziwa","Ziwa lina maji baridi","lake","zi·wa","nature"],
       ["mbingu","Mbingu zina mawingu","sky / heavens","mbi·ngu","nature"],
       ["ardhi","Ardhi hii ni nzuri","earth / ground","a·rdhi","nature"],
-      // places
       ["shule","Mahali wanafunzi husoma","school","shu·le","places"],
       ["nyumba","Mahali pa kuishi","house / home","nyu·mba","places"],
       ["mji","Mji mkubwa una watu wengi","city / town","mji","places"],
@@ -724,7 +780,6 @@ const LANGUAGES={
       ["soko","Soko lina bidhaa za kila aina","market","so·ko","places"],
       ["bandari","Bandari ina meli nyingi","port / harbor","ba·nda·ri","places"],
       ["msikiti","Msikiti una waumini wengi","mosque","msi·ki·ti","places"],
-      // body
       ["kichwa","Kichwa changu kinauma","head","ki·chwa","body"],
       ["moyo","Moyo wangu unapiga nguvu","heart","mo·yo","body"],
       ["mkono","Mkono wangu una nguvu","hand / arm","mko·no","body"],
@@ -737,7 +792,6 @@ const LANGUAGES={
       ["uso","Uso wake ni mzuri","face","u·so","body"],
       ["meno","Meno yangu ni meupe","teeth","me·no","body"],
       ["bega","Bega langu lina mzigo","shoulder","be·ga","body"],
-      // time
       ["asubuhi","Asubuhi tunaamka mapema","morning","a·su·bu·hi","time"],
       ["mchana","Mchana jua linachoma","midday / afternoon","mcha·na","time"],
       ["jioni","Jioni tunakaa pamoja","evening","jio·ni","time"],
@@ -749,7 +803,6 @@ const LANGUAGES={
       ["wiki","Wiki hii ina siku saba","week","wi·ki","time"],
       ["siku","Siku ya leo ni nzuri","day","si·ku","time"],
       ["saa","Saa ngapi sasa hivi?","hour / watch / time","saa","time"],
-      // values
       ["upendo","Upendo ni zawadi ya Mungu","love","u·pe·ndo","values"],
       ["heshima","Heshima inastahili kutolewa","respect","he·shi·ma","values"],
       ["utu","Utu ndio msingi wa maisha","ubuntu / humanity","u·tu","values"],
@@ -762,7 +815,6 @@ const LANGUAGES={
       ["huruma","Huruma inaonyesha upole","compassion / mercy","hu·ru·ma","values"],
       ["dhahabu","Madini ya thamani","gold","dha·ha·bu","values"],
       ["ghali","Chenye bei kubwa","expensive","gha·li","values"],
-      // household
       ["mlango","Mlango unafunguka asubuhi","door","mla·ngo","household"],
       ["dirisha","Dirisha linaingiza mwanga","window","di·ri·sha","household"],
       ["kitanda","Kitanda changu ni laini","bed","ki·ta·nda","household"],
@@ -773,7 +825,6 @@ const LANGUAGES={
       ["jiko","Jiko linawaka kwa moto","stove / cooker","ji·ko","household"],
       ["sahani","Sahani ina chakula","plate / dish","sa·ha·ni","household"],
       ["mkeka","Mkeka unalazwa chini","mat / rug","mke·ka","household"],
-      // numbers
       ["mbili","Mbili ni nambari ya pili","two","mbi·li","numbers"],
       ["tatu","Tatu ni nambari ya tatu","three","ta·tu","numbers"],
       ["tano","Tano ni nambari ya tano","five","ta·no","numbers"],
@@ -784,7 +835,150 @@ const LANGUAGES={
       ["kumi","Kumi ni nambari ya kumi","ten","ku·mi","numbers"],
       ["ishirini","Ishirini ni mara mbili ya kumi","twenty","i·shi·ri·ni","numbers"],
       ["thelathini","Thelathini ni mara tatu ya kumi","thirty","the·la·thi·ni","numbers"],
-      ["elfu","Elfu ni nambari kubwa sana","thousand","e·lfu","numbers"]
+      ["elfu","Elfu ni nambari kubwa sana","thousand","e·lfu","numbers"],
+      ["mtu","Binadamu mmoja yeyote","person","m·tu","family"],
+      ["watu","Binadamu wengi kwa pamoja","people","wa·tu","family"],
+      ["binti","Mtoto wa kike wa mtu","daughter","bi·nti","family"],
+      ["mvulana","Mtoto wa kiume","boy","mvu·la·na","family"],
+      ["msichana","Mtoto wa kike","girl","msi·cha·na","family"],
+      ["mzee","Mtu aliyezeeka sana","elder","mze·e","family"],
+      ["jirani","Mtu anayeishi karibu nawe","neighbor","ji·ra·ni","family"],
+      ["mwalimu","Mtu anayefundisha shuleni","teacher","mwa·li·mu","family"],
+      ["mgeni","Mtu anayetembelea","guest / stranger","mge·ni","family"],
+      ["chui","Mnyama mwenye madoadoa","leopard","chu·i","animals"],
+      ["twiga","Mnyama mwenye shingo ndefu","giraffe","twi·ga","animals"],
+      ["kiboko","Mnyama mkubwa wa majini","hippopotamus","ki·bo·ko","animals"],
+      ["kima","Aina ya nyani mdogo","monkey","ki·ma","animals"],
+      ["nyani","Mnyama anayepanda miti","baboon","nya·ni","animals"],
+      ["popo","Mnyama anayeruka usiku","bat","po·po","animals"],
+      ["mamba","Mnyama hatari wa mtoni","crocodile","ma·mba","animals"],
+      ["nyuki","Mdudu anayetengeneza asali","bee","nyu·ki","animals"],
+      ["buibui","Mdudu anayefuma utando","spider","bui·bui","animals"],
+      ["kobe","Mnyama mwenye gamba gumu","tortoise","ko·be","animals"],
+      ["punda","Mnyama anayebeba mizigo","donkey","pu·nda","animals"],
+      ["fisi","Mnyama anayecheka usiku","hyena","fi·si","animals"],
+      ["asali","Kitu kitamu kutoka kwa nyuki","honey","a·sa·li","food"],
+      ["chumvi","Kitu cha kuongeza ladha","salt","chu·mvi","food"],
+      ["pilipili","Kiungo chenye ukali","pepper / chili","pi·li·pi·li","food"],
+      ["mafuta","Kitu cha kupikia chenye unyevu","oil / fat","ma·fu·ta","food"],
+      ["unga","Mahindi yaliyosagwa","flour","u·nga","food"],
+      ["matunda","Vyakula vitamu vya miti","fruits","ma·tu·nda","food"],
+      ["nazi","Tunda la mnazi","coconut","na·zi","food"],
+      ["chungwa","Tunda la rangi ya machungwa","orange","chu·ngwa","food"],
+      ["nanasi","Tunda lenye taji","pineapple","na·na·si","food"],
+      ["viazi","Mboga inayootea ardhini","potatoes","vi·a·zi","food"],
+      ["maua","Vitu vizuri vya mimea","flowers","ma·u·a","nature"],
+      ["jiwe","Kitu kigumu cha ardhini","stone","ji·we","nature"],
+      ["mchanga","Vumbi laini la pwani","sand","mcha·nga","nature"],
+      ["wingu","Kitu cheupe angani","cloud","wi·ngu","nature"],
+      ["theluji","Maji yaliyoganda meupe","snow","the·lu·ji","nature"],
+      ["umeme","Mwanga wa radi angani","lightning","u·me·me","nature"],
+      ["majani","Sehemu za kijani za mti","leaves / grass","ma·ja·ni","nature"],
+      ["mwamba","Jiwe kubwa gumu","rock","mwa·mba","nature"],
+      ["jangwa","Eneo kavu lenye mchanga","desert","ja·ngwa","nature"],
+      ["kisima","Shimo la kupata maji","well","ki·si·ma","nature"],
+      ["mfereji","Njia ya kupitisha maji","canal / ditch","mfe·re·ji","nature"],
+      ["chumba","Sehemu moja ndani ya nyumba","room","chu·mba","places"],
+      ["choo","Mahali pa kujisaidia","toilet","cho·o","places"],
+      ["jiji","Mji mkubwa sana","city","ji·ji","places"],
+      ["uwanja","Eneo wazi la michezo","field / ground","uwa·nja","places"],
+      ["daraja","Njia ya kuvuka mto","bridge","da·ra·ja","places"],
+      ["kiwanda","Mahali pa kutengeneza bidhaa","factory","ki·wa·nda","places"],
+      ["ofisi","Mahali pa kufanyia kazi","office","o·fi·si","places"],
+      ["gereza","Mahali pa kufungia wahalifu","prison","ge·re·za","places"],
+      ["kidole","Sehemu ndogo ya mkono","finger","ki·do·le","body"],
+      ["nywele","Vitu vinavyoota kichwani","hair","nywe·le","body"],
+      ["ulimi","Kiungo cha kuonja kinywani","tongue","u·li·mi","body"],
+      ["shingo","Sehemu kati ya kichwa na mwili","neck","shi·ngo","body"],
+      ["damu","Maji mekundu mwilini","blood","da·mu","body"],
+      ["mfupa","Kitu kigumu ndani ya mwili","bone","mfu·pa","body"],
+      ["ngozi","Kifuniko cha nje cha mwili","skin","ngo·zi","body"],
+      ["kidevu","Sehemu ya chini ya uso","chin","ki·de·vu","body"],
+      ["dakika","Sehemu ndogo ya saa","minute","da·ki·ka","time"],
+      ["sasa","Wakati huu wa hivi karibuni","now","sa·sa","time"],
+      ["zamani","Wakati uliopita kitambo","past / old times","za·ma·ni","time"],
+      ["ukweli","Kitu kisicho na uongo","truth","u·kwe·li","values"],
+      ["haki","Kitu cha sawa na adili","justice / right","ha·ki","values"],
+      ["uhuru","Hali ya kutokuwa mtumwa","freedom","u·hu·ru","values"],
+      ["uvumilivu","Hali ya kustahimili","patience","u·vu·mi·li·vu","values"],
+      ["ukarimu","Hali ya kupenda kutoa","generosity","u·ka·ri·mu","values"],
+      ["bidii","Kufanya kazi kwa juhudi","diligence","bi·di·i","values"],
+      ["kioo","Kitu cha kujionea sura","mirror / glass","ki·o·o","household"],
+      ["ufagio","Kitu cha kufagia sakafu","broom","u·fa·gi·o","household"],
+      ["sabuni","Kitu cha kuoshea uchafu","soap","sa·bu·ni","household"],
+      ["taa","Kitu cha kutoa mwanga","lamp / light","ta·a","household"],
+      ["kisu","Kitu cha kukatia","knife","ki·su","household"],
+      ["uma","Kitu cha kulia chakula","fork","u·ma","household"],
+      ["ndoo","Chombo cha kubebea maji","bucket","ndo·o","household"],
+      ["moja","Namba ya kwanza kabisa","one","mo·ja","numbers"],
+      ["nne","Namba kati ya tatu na tano","four","nne","numbers"],
+      ["mia","Makumi kumi kwa pamoja","hundred","mi·a","numbers"],
+      ["milioni","Idadi kubwa sana ya elfu","million","mi·li·o·ni","numbers"]
+    ]
+  },
+  Zulu:{
+    config:{language:"Zulu",atomic_graphemes:["ngc","ngq","ngx","nkc","nkq","nkx","ntsh","tsh","dlw","shw","bh","ch","dl","gc","gq","gx","hh","hl","kh","kl","ph","sh","th","ts","ny","ng","nc","nq","nx","c","q","x"],ignore_casing:true,strip_diacritics:false,preserve_marks:[]},
+    beta:true,
+    words:[
+      ["umama","umzali wesifazane","mother","u·ma·ma","family"],
+      ["ubaba","umzali wesilisa","father","u·ba·ba","family"],
+      ["umfana","umntwana wesilisa","boy","um·fa·na","family"],
+      ["intombazane","umntwana wesifazane","girl","i·nto·mba·za·ne","family"],
+      ["ingane","umntwana omncane","child","i·nga·ne","family"],
+      ["udadewethu","udade wakho","sister","u·da·de·we·thu","family"],
+      ["umfowethu","umfana wakwethu","brother","um·fo·we·thu","family"],
+      ["ugogo","umama kamama","grandmother","u·go·go","family"],
+      ["umkhulu","ubaba kababa","grandfather","um·khu·lu","family"],
+      ["umngane","umuntu omthandayo","friend","um·nga·ne","family"],
+      ["inja","isilwane esikhonkothayo","dog","i·nja","animals"],
+      ["ikati","isilwane esincane sasekhaya","cat","i·ka·ti","animals"],
+      ["inkomo","isilwane esikhulu sasepulazini","cow","i·nko·mo","animals"],
+      ["imbuzi","isilwane esinezimpondo","goat","i·mbu·zi","animals"],
+      ["ingulube","isilwane esikhuluphele","pig","i·ngu·lu·be","animals"],
+      ["inkukhu","inyoni ezalela amaqanda","chicken","i·nku·khu","animals"],
+      ["ihhashi","isilwane esigitshelwayo","horse","i·hha·shi","animals"],
+      ["ingwe","isilwane esinamabala","leopard","i·ngwe","animals"],
+      ["ibhubesi","inkosi yezilwane","lion","i·bhu·be·si","animals"],
+      ["indlovu","isilwane esikhulu kunazo zonke","elephant","i·ndlo·vu","animals"],
+      ["inyoka","isilwane esihuquzelayo","snake","i·nyo·ka","animals"],
+      ["inyoni","isilwane esindizayo","bird","i·nyo·ni","animals"],
+      ["intuthwane","isinambuzane esincane","ant","i·ntu·thwa·ne","animals"],
+      ["ukudla","into esiyidlayo","food","u·ku·dla","food"],
+      ["isinkwa","ukudla okubhakiwe","bread","i·si·nkwa","food"],
+      ["ubisi","okuphuma enkomeni","milk","u·bi·si","food"],
+      ["inyama","ukudla okuvela ezilwaneni","meat","i·nya·ma","food"],
+      ["amazambane","ukudla okumbiwa emhlabathini","potatoes","a·ma·za·mba·ne","food"],
+      ["itiye","isiphuzo esishisayo","tea","i·ti·ye","food"],
+      ["ilanga","liyakhanya emini","sun","i·la·nga","nature"],
+      ["inyanga","ikhanya ebusuku","moon","i·nya·nga","nature"],
+      ["amanzi","aphuzwayo nawagelezayo","water","a·ma·nzi","nature"],
+      ["umoya","esiwuphefumulayo","wind / spirit","u·mo·ya","nature"],
+      ["imvula","amanzi awa esibhakabhakeni","rain","i·mvu·la","nature"],
+      ["umlilo","into eshisayo evuthayo","fire","u·mli·lo","nature"],
+      ["intaba","indawo ephakeme emhlabeni","mountain","i·nta·ba","nature"],
+      ["umfula","amanzi agelezayo","river","u·mfu·la","nature"],
+      ["isihlahla","simila phansi sinamagatsha","tree","i·si·hla·hla","nature"],
+      ["izulu","esibhakabhaka esiphezulu","sky","i·zu·lu","nature"],
+      ["ikhaya","indawo esihlala kuyo","home","i·kha·ya","places"],
+      ["isikole","indawo yokufunda","school","i·si·ko·le","places"],
+      ["idolobha","indawo enezitolo eziningi","town","i·do·lo·bha","places"],
+      ["ikhanda","ingxenye ephezulu yomzimba","head","i·kha·nda","body"],
+      ["amehlo","esibona ngawo","eyes","a·me·hlo","body"],
+      ["indlebe","esizwa ngayo","ear","i·ndle·be","body"],
+      ["umlomo","esikhuluma ngawo","mouth","u·mlo·mo","body"],
+      ["isandla","esibamba ngaso","hand","i·sa·ndla","body"],
+      ["unyawo","esihamba ngalo","foot","u·nya·wo","body"],
+      ["inhliziyo","eshaya esifubeni","heart","i·nhli·zi·yo","body"],
+      ["usuku","amahora angamashumi amabili nane","day","u·su·ku","time"],
+      ["ubusuku","isikhathi sobumnyama","night","u·bu·su·ku","time"],
+      ["namuhla","usuku esikulo manje","today","na·mu·hla","time"],
+      ["izolo","usuku oludlule","yesterday","i·zo·lo","time"],
+      ["uthando","umuzwa wokuthanda","love","u·tha·ndo","values"],
+      ["ukuthula","ukungabi nempi","peace","u·ku·thu·la","values"],
+      ["iqiniso","okuyikho hhayi amanga","truth","i·qi·ni·so","values"],
+      ["umnyango","esingena ngawo endlini","door","u·mnya·ngo","household"],
+      ["itafula","sidlela kulo","table","i·ta·fu·la","household"],
+      ["umbhede","esilala kuwo","bed","u·mbhe·de","household"]
     ]
   }
 };
@@ -980,6 +1174,7 @@ function newPuzzle(langName,forceDaily=false){
   document.getElementById("timer").classList.toggle("hidden",!timerOn);
   document.body.classList.toggle("learn-mode",GameConfig.learnMode);
   document.getElementById("vocabCard").classList.toggle("visible",GameConfig.learnMode);
+  document.getElementById("betaNote").style.display=data.beta?"block":"none";
   const badge=document.getElementById("cxBadge");
   badge.textContent=rules.label+(forceDaily?" · 📅 Daily":"");
   badge.className="cx-badge "+GameConfig.complexity;
@@ -1297,7 +1492,7 @@ document.addEventListener("keydown",e=>{
 });
 /* Language selector */
 const sel=document.getElementById("lang");
-Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=o.textContent=n;sel.appendChild(o);});
+Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=LANGUAGES[n].beta?n+" (Beta)":n;sel.appendChild(o);});
 sel.addEventListener("change",()=>newPuzzle(sel.value));
 /* PWA service worker */
 if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(()=>{});}

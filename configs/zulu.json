@@ -1,7 +1,7 @@
 {
-  "_status": "deferred-preview — NOT part of MVP1. Click consonants (c/q/x, gc/gq/nx) and trigraphs need validation + tuning before this is puzzle-ready.",
+  "_status": "BETA — vocabulary and clues pending native-speaker review. Tokenizer validated for digraphs/trigraphs/clicks. Prenasalized clusters (nd, nk, mb) are intentionally NOT atomic — standard isiZulu writes them as separate letters.",
   "language": "Zulu",
-  "atomic_graphemes": ["ch", "dl", "hl", "kh", "ph", "th", "ts", "bh", "sh", "ng", "ny", "nc", "nq", "nx", "gc", "gq", "gx", "c", "q", "x"],
+  "atomic_graphemes": ["ngc", "ngq", "ngx", "nkc", "nkq", "nkx", "ntsh", "tsh", "dlw", "shw", "bh", "ch", "dl", "gc", "gq", "gx", "hh", "hl", "kh", "kl", "ph", "sh", "th", "ts", "ny", "ng", "nc", "nq", "nx", "c", "q", "x"],
   "ignore_casing": true,
   "strip_diacritics": false,
   "preserve_marks": []

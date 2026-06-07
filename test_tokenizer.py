@@ -44,13 +44,21 @@ check("ng'aa", swahili.tokenize("ng'aa"), ["ng'", "a", "a"])
 # diacritics stripped but apostrophe preserved
 check("diacritic strip", swahili.tokenize("ng'ómbe"), ["ng'", "o", "mb", "e"])
 
-print("\n== Zulu: clicks and digraphs ==")
+print("\n== Zulu (Beta): clicks, digraphs, trigraphs ==")
 # "dlala" -> dl | a | l | a
 check("dlala", zulu.tokenize("dlala"), ["dl", "a", "l", "a"])
-# "ngqondo" -> ng | q | o | nd | o  ... longest-match picks ng then q
-check("nqo combo", zulu.tokenize("inqola"), ["i", "nq", "o", "l", "a"])
-# "gqgq" style: gc beats g+c
+# nasalised click "nq" is atomic
+check("inqola", zulu.tokenize("inqola"), ["i", "nq", "o", "l", "a"])
+# "gc" click beats g+c
 check("gcina", zulu.tokenize("gcina"), ["gc", "i", "n", "a"])
+# real word: indlovu -> dl atomic, prenasalised n+d kept SEPARATE (Zulu convention)
+check("indlovu", zulu.tokenize("indlovu"), ["i", "n", "dl", "o", "v", "u"])
+# inkomo -> nk is NOT atomic in Zulu (unlike Shona/Swahili); n and k separate
+check("inkomo", zulu.tokenize("inkomo"), ["i", "n", "k", "o", "m", "o"])
+# double-h digraph + sh
+check("ihhashi", zulu.tokenize("ihhashi"), ["i", "hh", "a", "sh", "i"])
+# trigraph ntsh is atomic, beats nt+sh
+check("ntsh trigraph", zulu.tokenize("intsha"), ["i", "ntsh", "a"])
 
 print("\n== End-to-end: a crossing happens at the GRAPHEME level ==")
 # Two words sharing the digraph "ng" should be able to cross on that one cell.
