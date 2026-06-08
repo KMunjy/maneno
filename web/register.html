@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Create your profile · Maneno</title>
+<meta name="description" content="Create your Maneno player profile — track your streak and best times."/>
+<meta name="theme-color" content="#0f1117"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#1a2035;--surface:#1e2840;--surface2:#28354f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --ink:#eef2ff;--muted:#9aa8c8;--dim:#7080a8;
+  --accent:#34d399;--accent2:#818cf8;--bad:#ef4444;
+  --shadow:0 8px 32px rgba(0,0,0,0.55);--r:14px;
+  --grad:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;}
+a{color:inherit;text-decoration:none;}
+header{height:62px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;cursor:pointer;}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 18px;}
+.card{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:30px 28px;box-shadow:var(--shadow);}
+h1{font-size:1.5rem;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;}
+.sub{color:var(--muted);font-size:.9rem;line-height:1.5;margin-bottom:22px;}
+.field{margin-bottom:16px;}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;}
+label .opt{color:var(--dim);font-weight:400;}
+input,select{width:100%;height:48px;font:inherit;font-size:.95rem;background:var(--surface2);border:1px solid var(--border2);color:var(--ink);border-radius:11px;padding:0 14px;transition:border-color .15s;}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+input.err{border-color:var(--bad);}
+.err-msg{display:none;color:var(--bad);font-size:.78rem;margin-top:5px;}
+input.err + .err-msg{display:block;}
+.submit{width:100%;height:50px;font:inherit;font-size:1rem;font-weight:700;cursor:pointer;background:var(--grad);color:#06231a;border:none;border-radius:12px;margin-top:6px;transition:filter .15s,transform .06s;}
+.submit:hover{filter:brightness(1.08);}
+.submit:active{transform:scale(.98);}
+.note{background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.28);border-radius:10px;padding:10px 12px;font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:20px;}
+.note b{color:var(--ink);}
+.alt{text-align:center;margin-top:18px;font-size:.88rem;color:var(--muted);}
+.alt a{color:var(--accent);font-weight:600;}
+.skip{text-align:center;margin-top:10px;}
+.skip a{color:var(--dim);font-size:.84rem;}
+.skip a:hover{color:var(--ink);}
+</style>
+</head>
+<body>
+<header><a class="logo" href="index.html" aria-label="Maneno home">Maneno</a></header>
+<main>
+  <div class="card">
+    <h1>Create your profile</h1>
+    <p class="sub">Save your name, streak and best times on this device. It takes one field.</p>
+
+    <div class="note">
+      ⓘ <b>Device-only for now.</b> Your profile is saved in this browser — no password, no email required.
+      Cross-device sync is coming later.
+    </div>
+
+    <form id="regForm" novalidate>
+      <div class="field">
+        <label for="name">Display name</label>
+        <input id="name" name="name" type="text" maxlength="20" autocomplete="nickname" placeholder="e.g. Tendai" required/>
+        <div class="err-msg">Please enter a name (1–20 characters).</div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email <span class="opt">— optional</span></label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com"/>
+        <div class="err-msg">That doesn't look like a valid email.</div>
+      </div>
+
+      <div class="field">
+        <label for="startlang">Start with <span class="opt">— optional</span></label>
+        <select id="startlang" name="startlang">
+          <option value="Shona">Shona</option>
+          <option value="Swahili">Swahili</option>
+          <option value="Zulu">Zulu (Beta)</option>
+        </select>
+      </div>
+
+      <button class="submit" type="submit">Create profile &amp; play →</button>
+    </form>
+
+    <div class="alt">Just want to play? <a href="play.html">Skip — play as guest</a></div>
+    <div class="skip"><a href="index.html">← Back to home</a></div>
+  </div>
+</main>
+
+<script>
+"use strict";
+const PROFKEY="maneno_v1_profile";
+const form=document.getElementById("regForm");
+const nameI=document.getElementById("name");
+const emailI=document.getElementById("email");
+const emailRe=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validName(){const v=nameI.value.trim();const ok=v.length>=1&&v.length<=20;nameI.classList.toggle("err",!ok);return ok;}
+function validEmail(){const v=emailI.value.trim();const ok=v===""||emailRe.test(v);emailI.classList.toggle("err",!ok);return ok;}
+
+nameI.addEventListener("blur",validName);
+emailI.addEventListener("blur",validEmail);
+nameI.addEventListener("input",()=>{if(nameI.classList.contains("err"))validName();});
+emailI.addEventListener("input",()=>{if(emailI.classList.contains("err"))validEmail();});
+
+form.addEventListener("submit",e=>{
+  e.preventDefault();
+  const okN=validName(),okE=validEmail();
+  if(!okN||!okE){ (okN?emailI:nameI).focus(); return; }
+  // Merge into any existing device profile so prior streak/stats survive
+  let prof={};
+  try{prof=JSON.parse(localStorage.getItem(PROFKEY)||"{}");}catch(_){}
+  prof.name=nameI.value.trim();
+  // defaults for a brand-new profile
+  prof.totalSolved=prof.totalSolved||0;
+  prof.streak=prof.streak||0;
+  prof.cleanSolves=prof.cleanSolves||0;
+  prof.bestSecs=(prof.bestSecs===undefined?null:prof.bestSecs);
+  prof.history=prof.history||[];
+  try{
+    localStorage.setItem(PROFKEY,JSON.stringify(prof));
+    const email=emailI.value.trim();
+    if(email) localStorage.setItem("maneno_v1_email",email);          // stored separately (game ignores it)
+    localStorage.setItem("maneno_v1_startlang",document.getElementById("startlang").value);
+  }catch(_){}
+  window.location.href="play.html";
+});
+</script>
+</body>
+</html>

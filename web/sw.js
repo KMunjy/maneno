@@ -5,10 +5,10 @@
      - Everything else (manifest, icons, future assets) → CACHE-FIRST with
        background refresh
    Bump CACHE on every release to evict the previous shell. */
-const CACHE = "mhanga-v4";
+const CACHE = "maneno-v1";
 // Relative paths so the SW works whether served at domain root (Vercel/Netlify)
 // or under a subpath (GitHub Pages: /payment-reminder/).
-const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+const SHELL = ["./", "./index.html", "./play.html", "./register.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

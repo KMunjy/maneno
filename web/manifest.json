@@ -1,8 +1,8 @@
 {
-  "name": "Mhanga · Bantu Crossword",
-  "short_name": "Mhanga",
+  "name": "Maneno · Bantu Crossword",
+  "short_name": "Maneno",
   "description": "A grapheme-aware crossword and language-learning game for Shona, Swahili and Zulu.",
-  "start_url": "./",
+  "start_url": "play.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",

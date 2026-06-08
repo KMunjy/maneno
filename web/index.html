@@ -3,1625 +3,196 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Mhanga · Bantu Crossword</title>
-<meta name="description" content="The first grapheme-aware crossword game for Shona, Swahili and Zulu — for everyone, from diaspora to curious minds."/>
-<meta name="theme-color" content="#111827"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Mhanga"/>
+<title>Maneno — Crosswords in your language (Shona · Swahili · Zulu)</title>
+<meta name="description" content="Maneno is the first grapheme-aware crossword for Bantu languages. Play and learn in Shona, Swahili and Zulu — every sound gets its own square. Free & installable."/>
+<meta name="theme-color" content="#0f1117"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <style>
-/* ══ tokens ══════════════════════════════════════════════════ */
 :root{
   --bg:#0f1117;--bg2:#1a2035;--surface:#1e2840;--surface2:#28354f;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
   --ink:#eef2ff;--muted:#9aa8c8;--dim:#7080a8;
   --accent:#34d399;--accent2:#818cf8;--accent3:#f472b6;
-  --good:#22c55e;--bad:#ef4444;--warn:#f59e0b;
-  --shadow:0 8px 32px rgba(0,0,0,0.55);--r:12px;
-  /* Classic crossword cell colours */
-  --cw-white:#ffffff;--cw-black:#111;--cw-line:#111;
-  --cw-ink:#0a0a0a;--cw-blue:#c5daff;--cw-yellow:#f7da21;
-  --cw-ok:#a8f0c6;--cw-bad:#ffc8c8;--cw-pencil:#e0e7ff;
-  --cw-rev:#fde68a;--cw-num:#0a2540;--cw-master:#d1fae5;
-  /* Responsive cell */
-  --csz:clamp(28px,5.5vw,48px);--cgap:2px;
-  --cnf:clamp(7px,1.2vw,10px);--cvf:clamp(12px,2.5vw,18px);
+  --shadow:0 8px 32px rgba(0,0,0,0.55);--r:14px;
+  --grad:linear-gradient(90deg,var(--accent),var(--accent2));
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-html,body{min-height:100vh;}
-body{
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  background:var(--bg);color:var(--ink);
-  display:flex;flex-direction:column;align-items:center;
-  padding:12px 10px 210px;
-}
-/* ── print resets ── */
-@media print{
-  body{background:#fff!important;color:#000!important;padding:0;}
-  .toolbar,.keypad,.clue-bar,.status-bar,.progress-wrap,.settings-drawer,
-  .sd-backdrop,.modal-overlay,.vocab-card,.learn-badge,.pencil-badge,
-  header .brand-actions{display:none!important;}
-  .layout{grid-template-columns:1fr!important;}
-  .side{display:none!important;}
-  .board-wrap{box-shadow:none!important;border:none!important;padding:0!important;}
-  #board{background:#000!important;}
-  .sq.live{background:#fff!important;border-color:#999!important;}
-  .sq.live .lv{color:#fff!important;} /* hide answers */
-  .sq.live .cn{color:#333!important;}
-  .print-clues{display:block!important;}
-  .print-title{display:block!important;font-size:1.2rem;font-weight:700;margin-bottom:8px;}
-}
-/* ── header ── */
-header{width:100%;max-width:1100px;margin-bottom:8px;}
-.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;}
-.brand-left{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
-h1{
-  font-size:1.5rem;font-weight:800;letter-spacing:-.5px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.brand-sub{color:var(--muted);font-size:.8rem;}
-.badge-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-.pencil-badge,.learn-badge{
-  display:none;padding:2px 8px;border-radius:6px;
-  font-size:.72rem;font-weight:700;letter-spacing:.5px;
-}
-.pencil-badge{background:rgba(129,140,248,.18);color:var(--accent2);border:1px solid rgba(129,140,248,.3);}
-.learn-badge{background:rgba(52,211,153,.18);color:var(--accent);border:1px solid rgba(52,211,153,.3);}
-.pencil-mode .pencil-badge{display:inline-block;}
-.learn-mode .learn-badge{display:inline-block;}
-/* Profile chip */
-.profile-chip{
-  display:flex;align-items:center;gap:6px;padding:4px 10px;
-  background:var(--surface);border:1px solid var(--border2);border-radius:20px;
-  font-size:.78rem;cursor:pointer;transition:border-color .15s;
-}
-.profile-chip:hover{border-color:var(--accent);}
-.profile-chip .pc-name{color:var(--ink);font-weight:600;}
-.profile-chip .pc-streak{color:var(--warn);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;overflow-x:hidden;}
+a{color:inherit;text-decoration:none;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px;}
 
-/* ── toolbar ── */
-.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center;}
-.toolbar select,.toolbar button,.toolbar label.toggle{
-  font:inherit;color:var(--ink);cursor:pointer;
-  background:var(--surface2);border:1px solid var(--border2);
-  padding:7px 11px;border-radius:9px;font-size:.82rem;white-space:nowrap;
-  transition:border-color .15s,background .15s,transform .06s;
-}
-.toolbar button:hover,.toolbar label.toggle:hover{border-color:var(--accent);}
-.toolbar button:active{transform:scale(.95);}
-.toolbar button.primary{background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(129,140,248,.18));border-color:rgba(52,211,153,.35);font-weight:600;}
-.toolbar button.danger{border-color:rgba(239,68,68,.3);color:var(--bad);}
-.toolbar .sep{width:1px;height:22px;background:var(--border2);align-self:center;}
-label.toggle input{display:none;}
-label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(52,211,153,.08);}
-/* ── overflow "More" menu (toolbar declutter) ── */
-.overflow-wrap{position:relative;}
-#btnMore[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);}
-.overflow-menu{
-  position:absolute;top:calc(100% + 6px);right:0;z-index:160;
-  background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
-  box-shadow:var(--shadow);padding:6px;min-width:190px;
-  display:none;flex-direction:column;gap:4px;
-}
-.overflow-menu.open{display:flex;}
-.overflow-menu button,.overflow-menu label.toggle{
-  width:100%;justify-content:flex-start;text-align:left;border-radius:8px;font-size:.84rem;
-}
-.ov-sep{height:1px;background:var(--border2);margin:3px 2px;}
+/* nav */
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:rgba(15,17,23,.78);border-bottom:1px solid var(--border);}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:62px;}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;cursor:pointer;}
+.nav-links{display:flex;align-items:center;gap:10px;}
+.btn{font:inherit;cursor:pointer;border-radius:10px;padding:9px 16px;font-size:.9rem;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--ink);transition:border-color .15s,filter .15s,transform .06s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{border-color:var(--accent);}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:var(--grad);color:#06231a;border:none;font-weight:700;}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.ghost{background:transparent;}
+.nav-links .btn.text{background:transparent;border:none;padding:9px 8px;}
 
-/* ── category strip ── */
-.cat-strip{
-  width:100%;max-width:1100px;display:flex;gap:6px;
-  overflow-x:auto;padding-bottom:2px;margin-bottom:8px;
-  scrollbar-width:none;-ms-overflow-style:none;
-}
-.cat-strip::-webkit-scrollbar{display:none;}
-.cat-chip{
-  font:inherit;font-size:.75rem;font-weight:600;
-  padding:5px 12px;border-radius:20px;cursor:pointer;white-space:nowrap;
-  background:var(--surface2);border:1px solid var(--border2);color:var(--muted);
-  transition:background .15s,border-color .15s,color .15s;flex-shrink:0;
-}
-.cat-chip:hover{border-color:var(--accent);color:var(--ink);}
-.cat-chip.active{background:rgba(52,211,153,.15);border-color:var(--accent);color:var(--accent);}
+/* hero */
+.hero{padding:64px 0 48px;display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+@media(min-width:860px){.hero{grid-template-columns:1.1fr .9fr;padding:84px 0 64px;}}
+.eyebrow{display:inline-block;font-size:.74rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);padding:5px 12px;border-radius:20px;margin-bottom:18px;}
+h1.hero-h{font-size:clamp(2rem,5.5vw,3.3rem);line-height:1.08;letter-spacing:-1.5px;font-weight:800;margin-bottom:18px;}
+h1.hero-h .accent{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero-sub{font-size:clamp(1rem,2vw,1.18rem);color:var(--muted);max-width:34ch;margin-bottom:28px;}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;}
+.btn.lg{padding:14px 26px;font-size:1.02rem;border-radius:12px;}
+.hero-note{margin-top:16px;font-size:.82rem;color:var(--dim);}
 
-/* ── clue bar ── */
-.clue-bar{
-  width:100%;max-width:1100px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:9px 14px;
-  display:flex;align-items:center;gap:10px;margin-bottom:6px;min-height:44px;
-}
-.cb-num{color:var(--accent2);font-weight:700;font-size:.88rem;min-width:28px;}
-.cb-dir{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;min-width:40px;}
-.cb-text{flex:1;font-size:.9rem;line-height:1.35;}
-.cb-len{color:var(--dim);font-size:.78rem;white-space:nowrap;}
-.cx-badge{padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700;text-transform:uppercase;white-space:nowrap;}
-.cx-badge.easy{background:rgba(52,211,153,.15);color:var(--accent);border:1px solid rgba(52,211,153,.3);}
-.cx-badge.medium{background:rgba(129,140,248,.15);color:var(--accent2);border:1px solid rgba(129,140,248,.3);}
-.cx-badge.hard{background:rgba(239,68,68,.15);color:var(--bad);border:1px solid rgba(239,68,68,.3);}
-#hintBudgetBadge{font-size:.76rem;color:var(--dim);}
+/* hero crossword visual (on-brand: white cells / black blocks) */
+.cw{display:inline-grid;gap:3px;background:#111;border:3px solid #111;border-radius:4px;box-shadow:var(--shadow);grid-template-columns:repeat(6,clamp(38px,9vw,54px));grid-template-rows:repeat(6,clamp(38px,9vw,54px));margin:0 auto;}
+.cw .c{position:relative;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:clamp(15px,3.6vw,22px);color:#0a0a0a;border-radius:2px;}
+.cw .c.w{background:#fff;}
+.cw .c.b{background:#111;}
+.cw .c .n{position:absolute;top:1px;left:3px;font-size:8px;font-weight:700;color:#1e3a5f;}
+.hero-visual{display:flex;justify-content:center;}
 
-/* ── status / timer ── */
-.status-bar{
-  width:100%;max-width:1100px;
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:6px;font-size:.78rem;color:var(--muted);flex-wrap:wrap;gap:4px;
-}
-.status-msg.win{color:var(--good);font-weight:700;}
-.status-msg.err{color:var(--bad);}
-.status-msg.info{color:var(--accent);}
-.timer-row{display:flex;align-items:center;gap:8px;}
-#timer{font-variant-numeric:tabular-nums;}
-#timer.hidden{visibility:hidden;}
-#timer.warn{color:var(--warn);font-weight:700;}
-#timer.danger{color:var(--bad);font-weight:700;}
-.streak{display:flex;align-items:center;gap:4px;color:var(--warn);}
+/* section */
+section{padding:48px 0;}
+.sec-head{text-align:center;max-width:640px;margin:0 auto 40px;}
+.sec-head h2{font-size:clamp(1.5rem,3.4vw,2.1rem);letter-spacing:-.8px;font-weight:800;margin-bottom:12px;}
+.sec-head p{color:var(--muted);font-size:1.02rem;}
 
-/* ── progress ── */
-.progress-wrap{width:100%;max-width:1100px;margin-bottom:10px;}
-.progress-track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease;}
+/* features */
+.grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:640px){.grid{grid-template-columns:1fr 1fr;}}
+@media(min-width:960px){.grid.three{grid-template-columns:1fr 1fr 1fr;}}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:24px;transition:border-color .15s,transform .15s;}
+.card:hover{border-color:rgba(52,211,153,.35);transform:translateY(-3px);}
+.card .ic{font-size:1.7rem;margin-bottom:12px;}
+.card h3{font-size:1.08rem;font-weight:700;margin-bottom:7px;}
+.card p{color:var(--muted);font-size:.92rem;line-height:1.55;}
 
-/* ── main layout ── */
-.layout{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr;gap:14px;}
-@media(min-width:820px){.layout{grid-template-columns:auto 1fr;align-items:start;}}
+/* how it works */
+.steps{display:grid;grid-template-columns:1fr;gap:18px;counter-reset:s;}
+@media(min-width:760px){.steps{grid-template-columns:1fr 1fr 1fr;}}
+.step{position:relative;padding:22px 22px 22px 64px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:20px;top:20px;width:32px;height:32px;border-radius:50%;background:var(--grad);color:#06231a;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:1rem;}
+.step h3{font-size:1rem;font-weight:700;margin-bottom:5px;}
+.step p{color:var(--muted);font-size:.9rem;}
 
-/* ══ CROSSWORD TABLE ════════════════════════════════════════ */
-.board-wrap{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:14px;box-shadow:var(--shadow);
-  overflow:auto;align-self:start;
-  text-align:center;            /* Option 2: centre the framed grid */
-}
-#board{
-  display:inline-grid;
-  gap:var(--cgap);
-  background:var(--cw-line);
-  /* Option 2 — Classic Frame: solid black outer border like newspaper crosswords */
-  border:3px solid var(--cw-black);
-  border-radius:2px;
-  box-shadow:0 0 0 1px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.35);
-}
-.sq{width:var(--csz);height:var(--csz);position:relative;}
-.sq.blk{background:var(--cw-black);}
-.sq.live{
-  background:var(--cw-white);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--cw-ink);transition:background .08s;
-}
-.sq.live.wd{background:var(--cw-blue);}
-.sq.live.cur{background:var(--cw-yellow);}
-.sq.live.pnc{background:var(--cw-pencil);}
-.sq.live.ok{background:var(--cw-ok);}
-.sq.live.bad{background:var(--cw-bad);animation:shake .25s ease .1s;}
-.sq.live.rev{background:var(--cw-rev);}
-.sq.live.mastered{background:var(--cw-master);}
-.sq.live.study-reveal .lv{color:#9ca3af;font-weight:400;}
-.cn{position:absolute;top:1px;left:2px;font-size:var(--cnf);font-weight:700;color:var(--cw-num);line-height:1;pointer-events:none;user-select:none;}
-.lv{font-size:var(--cvf);font-weight:800;text-transform:uppercase;pointer-events:none;line-height:1;user-select:none;color:inherit;}
-.sq.live.pnc .lv{color:#6366f1;font-style:italic;}
-.sq.live.bad .lv{color:#b91c1c;}
+/* languages strip */
+.langs{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.lang-pill{background:var(--surface2);border:1px solid var(--border2);border-radius:30px;padding:10px 20px;font-weight:600;font-size:.95rem;}
+.lang-pill .beta{font-size:.68rem;color:var(--accent2);font-weight:700;vertical-align:super;margin-left:3px;}
 
-.legend{font-size:.72rem;color:var(--dim);margin-top:8px;line-height:1.5;}
-.legend b{color:var(--muted);}
+/* final cta */
+.final{background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(129,140,248,.12));border:1px solid rgba(52,211,153,.28);border-radius:20px;padding:48px 28px;text-align:center;}
+.final h2{font-size:clamp(1.6rem,3.6vw,2.3rem);letter-spacing:-.8px;font-weight:800;margin-bottom:14px;}
+.final p{color:var(--muted);margin-bottom:26px;font-size:1.05rem;}
 
-/* print clue list */
-.print-title{display:none;font-size:1rem;font-weight:700;margin:12px 0 4px;}
-.print-clues{display:none;font-size:.82rem;line-height:1.6;columns:2;margin-top:8px;}
-
-/* vocab card */
-.vocab-card{
-  width:100%;max-width:1100px;
-  background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(129,140,248,.1));
-  border:1px solid rgba(52,211,153,.25);border-radius:var(--r);
-  padding:12px 16px;margin-bottom:8px;display:none;
-  grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
-}
-.vocab-card.visible{display:grid;}
-.vc-word{font-size:1.5rem;font-weight:800;letter-spacing:-1px;}
-.vc-phonetic{font-size:.78rem;color:var(--muted);margin-top:2px;}
-.vc-en{font-size:1rem;color:var(--accent);font-weight:600;}
-.vc-native{font-size:.82rem;color:var(--muted);line-height:1.3;margin-top:2px;}
-.vc-stage{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;color:var(--dim);text-transform:uppercase;}
-.vc-dots{display:flex;gap:4px;}
-.vc-dot{width:7px;height:7px;border-radius:50%;background:var(--surface2);transition:background .3s;}
-.vc-dot.lit{background:var(--accent);}
-
-/* ── clue panels ── */
-.side{display:flex;flex-direction:column;gap:12px;}
-.clue-panel{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--r);padding:12px 14px;
-  max-height:360px;overflow-y:auto;scroll-behavior:smooth;
-}
-.clue-panel h2{
-  font-size:.7rem;text-transform:uppercase;letter-spacing:1.8px;
-  color:var(--accent);margin-bottom:8px;font-weight:700;
-  position:sticky;top:0;background:var(--surface);padding-bottom:4px;z-index:1;
-}
-.ci{display:flex;gap:7px;padding:4px 6px;border-radius:7px;cursor:pointer;font-size:.85rem;line-height:1.4;transition:background .1s;scroll-margin:60px;}
-.ci:hover{background:rgba(255,255,255,.05);}
-.ci.act{background:rgba(52,211,153,.1);border-left:2px solid var(--accent);padding-left:4px;}
-.ci.done{color:var(--dim);}
-.ci .cn2{color:var(--accent2);font-weight:700;min-width:20px;font-size:.82rem;flex-shrink:0;}
-.ci .cl{color:var(--dim);font-size:.76rem;}
-/* learn-mode bilingual clue */
-.ci .en-clue{display:none;color:var(--accent);font-size:.78rem;font-weight:600;margin-top:1px;}
-.learn-mode .ci .en-clue{display:block;}
-
-/* ── hint modal ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px 26px;max-width:360px;width:92%;box-shadow:var(--shadow);}
-/* ── onboarding card (first-run + Help) ── */
-.modal.onboard{max-width:440px;max-height:88vh;overflow-y:auto;}
-.ob-title{font-size:1.25rem;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
-.ob-sub{color:var(--muted);font-size:.86rem;margin-bottom:18px;line-height:1.45;}
-.ob-step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;}
-.ob-icon{font-size:1.3rem;line-height:1;flex-shrink:0;width:30px;text-align:center;}
-.ob-step h4{font-size:.92rem;font-weight:700;margin-bottom:3px;}
-.ob-step p{color:var(--muted);font-size:.82rem;line-height:1.5;margin:0;}
-.ob-step b{color:var(--ink);}
-/* mini demo grid — shows a digraph filling one cell */
-.ob-demo{display:flex;gap:3px;margin:8px 0 2px;justify-content:flex-start;}
-.ob-demo .dc{background:#fff;color:#111;font-weight:800;font-size:.85rem;
-  width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:2px;text-transform:uppercase;}
-.ob-demo .dc.di{background:var(--cw-yellow);}
-.ob-caption{font-size:.74rem;color:var(--dim);margin-top:2px;}
-.ob-start{margin-top:8px;width:100%;font:inherit;cursor:pointer;font-weight:700;font-size:.92rem;
-  background:linear-gradient(135deg,rgba(52,211,153,.25),rgba(129,140,248,.25));
-  border:1px solid var(--accent);color:var(--ink);padding:12px;border-radius:11px;transition:filter .15s;}
-.ob-start:hover{filter:brightness(1.15);}
-.modal h3{font-size:1rem;margin-bottom:6px;font-weight:700;}
-.modal p{color:var(--muted);font-size:.84rem;margin-bottom:16px;line-height:1.5;}
-.btn-row{display:flex;flex-direction:column;gap:8px;}
-.mbtn{font:inherit;cursor:pointer;color:var(--ink);background:var(--surface2);border:1px solid var(--border2);padding:10px 14px;border-radius:10px;text-align:left;transition:background .15s,border-color .15s;}
-.mbtn:hover{border-color:var(--accent);}
-.mbtn b{display:block;margin-bottom:2px;font-size:.88rem;}
-.mbtn small{color:var(--muted);font-size:.76rem;}
-.mbtn.dest{border-color:rgba(239,68,68,.3);}
-.mbtn.dest:hover{border-color:var(--bad);}
-.mcancel{margin-top:10px;width:100%;font:inherit;cursor:pointer;background:transparent;border:none;color:var(--muted);font-size:.84rem;padding:7px;border-radius:7px;}
-.mcancel:hover{color:var(--ink);}
-
-/* ── profile modal ── */
-.pmodal{max-width:340px;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
-.stat-box{background:var(--surface2);border-radius:10px;padding:10px;text-align:center;}
-.stat-val{font-size:1.6rem;font-weight:800;color:var(--accent);}
-.stat-lbl{font-size:.72rem;color:var(--muted);margin-top:2px;}
-.name-input{width:100%;font:inherit;font-size:.9rem;background:var(--surface2);border:1px solid var(--border2);color:var(--ink);padding:8px 12px;border-radius:9px;margin-top:8px;}
-.name-input:focus{outline:none;border-color:var(--accent);}
-.save-name{margin-top:8px;width:100%;font:inherit;cursor:pointer;background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.35);color:var(--accent);padding:8px;border-radius:9px;font-weight:600;}
-.history-item{font-size:.78rem;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);}
-
-/* ── settings drawer ── */
-.settings-drawer{position:fixed;top:0;right:0;width:min(320px,95vw);height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;overflow-y:auto;padding:18px;transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column;gap:0;}
-.settings-drawer.open{transform:translateX(0);}
-.sd-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
-.sd-header h2{font-size:1rem;font-weight:700;}
-.sd-close{font:inherit;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:4px 8px;border-radius:6px;}
-.sd-close:hover{color:var(--ink);}
-.sd-section{margin-bottom:18px;}
-.sd-section h3{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);font-weight:700;margin-bottom:8px;display:block;}
-.seg-ctrl{display:flex;border-radius:9px;overflow:hidden;border:1px solid var(--border2);}
-.seg-ctrl label{flex:1;text-align:center;cursor:pointer;padding:7px 8px;font-size:.78rem;transition:background .15s,color .15s;border-right:1px solid var(--border2);color:var(--muted);}
-.seg-ctrl label:last-child{border-right:none;}
-.seg-ctrl input{display:none;}
-.seg-ctrl label:has(input:checked){background:var(--surface2);color:var(--ink);font-weight:600;}
-.slider-row{display:flex;align-items:center;gap:10px;}
-.slider-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--surface2);border-radius:2px;outline:none;cursor:pointer;}
-.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;}
-.slv{font-size:.88rem;font-weight:700;color:var(--ink);min-width:24px;text-align:right;font-variant-numeric:tabular-nums;}
-.sd-section input[type=number]{background:var(--surface2);border:1px solid var(--border2);color:var(--ink);padding:6px 10px;border-radius:8px;font:inherit;font-size:.84rem;width:75px;}
-.sd-toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.sd-toggle{position:relative;width:42px;height:22px;cursor:pointer;}
-.sd-toggle input{opacity:0;width:0;height:0;}
-.sd-toggle-track{position:absolute;inset:0;border-radius:11px;background:var(--surface2);border:1px solid var(--border2);transition:background .2s;}
-.sd-toggle input:checked~.sd-toggle-track{background:var(--accent);border-color:var(--accent);}
-.sd-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;}
-.sd-toggle input:checked~.sd-toggle-thumb{transform:translateX(20px);}
-.level-presets{display:flex;flex-direction:column;gap:7px;}
-.lp-btn{font:inherit;cursor:pointer;text-align:left;background:var(--surface2);border:1px solid var(--border2);padding:9px 12px;border-radius:9px;transition:border-color .15s,background .15s;display:flex;justify-content:space-between;align-items:center;}
-.lp-btn:hover{border-color:var(--accent);}
-.lp-btn b{font-size:.85rem;display:block;margin-bottom:1px;color:var(--ink);}
-.lp-btn small{color:var(--muted);font-size:.74rem;}
-.lp-badge{font-size:.68rem;padding:2px 6px;border-radius:10px;font-weight:700;white-space:nowrap;}
-.lp-badge.b{background:rgba(52,211,153,.2);color:var(--accent);}
-.lp-badge.i{background:rgba(129,140,248,.2);color:var(--accent2);}
-.lp-badge.a{background:rgba(239,68,68,.2);color:var(--bad);}
-.hint-budget{font-size:.76rem;color:var(--muted);margin-top:5px;}
-.sd-apply{font:inherit;color:var(--ink);cursor:pointer;width:100%;background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(129,140,248,.18));border:1px solid rgba(52,211,153,.35);padding:10px;border-radius:10px;font-size:.86rem;font-weight:600;transition:border-color .15s;margin-top:auto;}
-.sd-apply:hover{border-color:var(--accent);}
-.sd-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:399;}
-.sd-backdrop.open{display:block;}
-
-/* ── keypad ── */
-.keypad{position:fixed;bottom:0;left:0;right:0;z-index:200;padding:7px 7px calc(7px + env(safe-area-inset-bottom));background:rgba(15,17,23,.97);border-top:1px solid var(--border2);backdrop-filter:blur(18px);display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-height:28vh;overflow-y:auto;}
-.keypad button{font:inherit;color:var(--ink);cursor:pointer;background:var(--surface2);border:1px solid var(--border);min-width:44px;height:44px;padding:0 9px;border-radius:8px;font-size:.86rem;transition:background .1s,transform .06s;display:flex;align-items:center;justify-content:center;}
-.keypad button:active{transform:scale(.91);}
-.keypad .kdi{color:var(--accent);border-color:rgba(52,211,153,.2);font-weight:600;}
-.keypad .kutil{color:var(--accent2);}
-
-/* ── accessibility: visible keyboard focus (WCAG 2.4.7) ── */
-*:focus-visible{outline:3px solid var(--accent2);outline-offset:2px;border-radius:3px;}
-.sq.live:focus-visible{outline-offset:-3px;}
-/* ── autocheck non-colour cue (WCAG 1.4.1): glyph, not colour alone ── */
-.sq.live.ok::after{content:"✓";position:absolute;bottom:0;right:2px;font-size:9px;line-height:1;color:#076f3e;}
-.sq.live.bad::after{content:"✗";position:absolute;bottom:0;right:2px;font-size:9px;line-height:1;color:#b91c1c;}
-
-/* ── animations ── */
-@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}80%{transform:translateX(2px);}}
+/* footer */
+footer{border-top:1px solid var(--border);margin-top:48px;padding:32px 0;}
+.foot-in{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;}
+.foot-links{display:flex;gap:18px;flex-wrap:wrap;}
+.foot-links a{color:var(--muted);font-size:.9rem;}
+.foot-links a:hover{color:var(--ink);}
+.foot-meta{color:var(--dim);font-size:.82rem;}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="brand-left">
-      <h1>Mhanga</h1>
-      <span style="color:var(--muted);font-size:.8rem;">Bantu crossword</span>
-    </div>
-    <div class="badge-row">
-      <span class="pencil-badge" id="pencilBadge">✏ PENCIL</span>
-      <span class="learn-badge" id="learnBadge">📚 LEARN</span>
-      <button class="profile-chip" id="btnProfile" aria-label="Your profile">
-        <span>👤</span>
-        <span class="pc-name" id="pcName">Player</span>
-        <span class="pc-streak" id="pcStreak"></span>
-      </button>
+<nav>
+  <div class="wrap nav-in">
+    <a class="logo" href="index.html" aria-label="Maneno home">Maneno</a>
+    <div class="nav-links">
+      <a class="btn text" href="#features">Features</a>
+      <a class="btn ghost" href="register.html">Sign up</a>
+      <a class="btn primary" href="play.html">Play</a>
     </div>
   </div>
-  <!-- Primary actions in the row; secondary tools live in the ⋯ More menu (decluttered) -->
-  <div class="toolbar" role="toolbar" aria-label="Puzzle controls">
-    <select id="lang" aria-label="Language"></select>
-    <button id="btnNew" class="primary">New Puzzle</button>
-    <button id="btnCheck">Check</button>
-    <button id="btnHint">Hint ▾</button>
-    <label class="toggle" id="lblPencil" title="Pencil mode — mark uncertain letters">
-      <input type="checkbox" id="cbPencil"/>
-      <span>✏ Pencil</span>
-    </label>
-    <div class="overflow-wrap">
-      <button id="btnMore" aria-haspopup="true" aria-expanded="false" title="More tools">⋯ More</button>
-      <div class="overflow-menu" id="overflowMenu" role="menu" aria-label="More tools">
-        <button id="btnDaily" role="menuitem" title="Today's shared puzzle — same for everyone">📅 Daily puzzle</button>
-        <label class="toggle" id="lblAuto" title="Real-time error highlighting" role="menuitemcheckbox">
-          <input type="checkbox" id="cbAuto" aria-label="Autocheck"/>
-          <span>✓ Autocheck</span>
-        </label>
-        <label class="toggle" id="lblTimer" title="Show/hide timer" role="menuitemcheckbox">
-          <input type="checkbox" id="cbTimer" checked/>
-          <span>⏱ Timer</span>
-        </label>
-        <button id="btnPrint" role="menuitem" title="Print blank crossword">🖨 Print</button>
-        <button id="btnClear" class="danger" role="menuitem">🧹 Clear</button>
-        <div class="ov-sep"></div>
-        <button id="btnSettings" role="menuitem">⚙ Settings</button>
-        <button id="btnHelp" role="menuitem" title="How to play">? Help</button>
-      </div>
+</nav>
+
+<header class="wrap hero">
+  <div>
+    <span class="eyebrow">Shona · Swahili · Zulu</span>
+    <h1 class="hero-h">Crosswords in the <span class="accent">languages you grew up with.</span></h1>
+    <p class="hero-sub">Maneno is the first crossword built for Bantu languages — where every sound gets its own square. Play for fun, or learn a mother tongue one word at a time.</p>
+    <div class="cta-row">
+      <a class="btn primary lg" href="play.html">▶ Play now — free</a>
+      <a class="btn ghost lg" href="register.html">Create your profile</a>
+    </div>
+    <div class="hero-note">No account needed to play · works offline · add to your home screen</div>
+  </div>
+  <div class="hero-visual">
+    <!-- On-brand mini crossword spelling MANENO down + NENO across -->
+    <div class="cw" aria-hidden="true">
+      <div class="c w"><span class="n">1</span>M</div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div>
+      <div class="c w">A</div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div>
+      <div class="c w"><span class="n">2</span>N</div><div class="c w">E</div><div class="c w">N</div><div class="c w">O</div><div class="c b"></div><div class="c b"></div>
+      <div class="c w">E</div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div>
+      <div class="c w">N</div><div class="c b"></div><div class="c w"><span class="n">3</span>Z</div><div class="c w">V</div><div class="c w">O</div><div class="c b"></div>
+      <div class="c w">O</div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div><div class="c b"></div>
     </div>
   </div>
 </header>
 
-<!-- Category filter strip -->
-<div class="cat-strip" id="catStrip" role="navigation" aria-label="Word category filter"></div>
-
-<!-- Vocab card (learn mode) -->
-<div class="vocab-card" id="vocabCard" aria-live="polite">
-  <div>
-    <div class="vc-word" id="vcWord"></div>
-    <div class="vc-phonetic" id="vcPhonetic"></div>
+<section id="features" class="wrap">
+  <div class="sec-head">
+    <h2>A crossword that finally fits the language</h2>
+    <p>Bantu languages are built on letter-pairs. Maneno treats them the way speakers do.</p>
   </div>
-  <div style="flex:1">
-    <div class="vc-en" id="vcEn"></div>
-    <div class="vc-native" id="vcNative"></div>
+  <div class="grid three">
+    <div class="card"><div class="ic">🔤</div><h3>One sound, one square</h3><p>Digraphs like <b>ng'</b>, <b>zv</b>, <b>ch</b> and <b>dl</b> each fill a single cell — the thing ordinary crosswords get wrong. Type them or tap the grapheme keypad.</p></div>
+    <div class="card"><div class="ic">📚</div><h3>Play or learn</h3><p>Switch on <b>Learn Mode</b> for English meanings and pronunciation, or just enjoy the puzzle. Built for the diaspora, heritage learners, and word lovers.</p></div>
+    <div class="card"><div class="ic">🎯</div><h3>Your level, your way</h3><p>Beginner to advanced, themed categories (Family, Animals, Food…), a timer if you want it, and a streak to keep you coming back.</p></div>
+    <div class="card"><div class="ic">📅</div><h3>A daily puzzle</h3><p>One shared puzzle a day — the same grid for everyone, everywhere. Compare notes with friends and family.</p></div>
+    <div class="card"><div class="ic">🌍</div><h3>Three languages</h3><p>Shona and Swahili today, Zulu in Beta, with more Bantu languages to come. The same engine, your orthography.</p></div>
+    <div class="card"><div class="ic">📱</div><h3>Free &amp; installable</h3><p>Runs in any browser, works offline, and installs to your home screen like a native app. No sign-up required to start.</p></div>
   </div>
-  <div class="vc-stage">
-    <div class="vc-dots" id="vcDots"></div>
-    <span id="vcStageLabel">studying</span>
-    <button id="btnPractice" style="margin-top:5px;font:inherit;font-size:.7rem;cursor:pointer;background:var(--accent);color:#111;border:none;border-radius:6px;padding:3px 9px;font-weight:700;display:none;">▶ Practice</button>
+</section>
+
+<section class="wrap">
+  <div class="sec-head"><h2>How it works</h2></div>
+  <div class="steps">
+    <div class="step"><h3>Pick a language &amp; category</h3><p>Shona, Swahili or Zulu — then a theme or the daily puzzle.</p></div>
+    <div class="step"><h3>Fill the grid</h3><p>Type on your keyboard or tap digraph keys. Letter-pairs snap into one square automatically.</p></div>
+    <div class="step"><h3>Learn &amp; track</h3><p>See meanings in Learn Mode, build a streak, and beat your best time.</p></div>
   </div>
-</div>
+</section>
 
-<!-- Clue bar -->
-<div class="clue-bar" id="clueBar" aria-live="polite" aria-atomic="true">
-  <span class="cb-num" id="cbNum">—</span>
-  <span class="cb-dir" id="cbDir"></span>
-  <span class="cb-text" id="cbText">Select a square or clue to start</span>
-  <span class="cb-len" id="cbLen"></span>
-  <span class="cx-badge medium" id="cxBadge">Medium</span>
-  <span id="hintBudgetBadge"></span>
-</div>
-
-<!-- Beta disclaimer (shown only for Beta languages) -->
-<div id="betaNote" style="display:none;width:100%;max-width:1100px;margin-bottom:8px;padding:7px 14px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:10px;font-size:.78rem;color:var(--warn);">
-  ⚠ <b>Zulu is in Beta.</b> Vocabulary &amp; clues are pending native-speaker review — play for fun, but verify spellings before relying on them for study.
-</div>
-
-<!-- Status + timer -->
-<div class="status-bar">
-  <span class="status-msg" id="statusMsg" role="status" aria-live="polite"></span>
-  <div class="timer-row">
-    <div class="streak" id="streakBadge" style="display:none">🔥 <span id="streakCount">0</span></div>
-    <span id="timer">00:00</span>
+<section class="wrap">
+  <div class="sec-head"><h2>Made for these languages</h2><p>The first crossword game where Shona has a home — and Swahili and Zulu feel native.</p></div>
+  <div class="langs">
+    <span class="lang-pill">🇿🇼 Shona</span>
+    <span class="lang-pill">🌍 Swahili</span>
+    <span class="lang-pill">🇿🇦 Zulu<span class="beta">BETA</span></span>
   </div>
-</div>
+</section>
 
-<!-- Progress bar -->
-<div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>
-
-<div class="layout">
-  <div class="board-wrap" role="main">
-    <div class="print-title" id="printTitle"></div>
-    <div id="board" role="grid" aria-label="Crossword grid"></div>
-    <div class="legend">Each cell = one <b>grapheme</b>. Digraphs like <b>ng'</b>, <b>zv</b>, <b>ch</b> = one square.</div>
-    <!-- Print-only clue list -->
-    <div class="print-clues" id="printClues"></div>
-  </div>
-  <div class="side" role="complementary" aria-label="Clues">
-    <div class="clue-panel"><h2>Across</h2><div id="acrossClues" role="list"></div></div>
-    <div class="clue-panel"><h2>Down</h2><div id="downClues" role="list"></div></div>
-  </div>
-</div>
-
-<!-- Onboarding / How-to-play modal -->
-<div class="modal-overlay" id="onboardModal" role="dialog" aria-modal="true" aria-labelledby="obTitle">
-  <div class="modal onboard">
-    <div class="ob-title" id="obTitle">Welcome to Mhanga 🎉</div>
-    <div class="ob-sub">The first crossword built for Bantu languages — Shona, Swahili &amp; Zulu.</div>
-
-    <div class="ob-step">
-      <div class="ob-icon">🔤</div>
-      <div>
-        <h4>One square = one sound</h4>
-        <p>Letter-pairs like <b>ng'</b>, <b>zv</b>, <b>ch</b>, <b>dl</b> fill a <b>single</b> cell — not two. That's what makes a Bantu crossword work.</p>
-        <div class="ob-demo">
-          <div class="dc di">zv</div><div class="dc">o</div><div class="dc di">mb</div><div class="dc">o</div>
-        </div>
-        <div class="ob-caption">“zvombo” = 4 squares, not 6 letters</div>
-      </div>
-    </div>
-
-    <div class="ob-step">
-      <div class="ob-icon">⌨️</div>
-      <div>
-        <h4>How to fill it in</h4>
-        <p>Tap a clue or square, then type. Type <b>z</b> then <b>v</b> and it joins into <b>zv</b> automatically — or tap the green digraph keys on the keypad below.</p>
-      </div>
-    </div>
-
-    <div class="ob-step">
-      <div class="ob-icon">📚</div>
-      <div>
-        <h4>Learning a language?</h4>
-        <p>Turn on <b>Learn Mode</b> in ⚙ Settings for English meanings and pronunciation — built for the diaspora and curious minds alike.</p>
-      </div>
-    </div>
-
-    <div class="ob-step">
-      <div class="ob-icon">🎯</div>
-      <div>
-        <h4>Make it yours</h4>
-        <p>Pick a <b>category</b> (Animals, Family, Food…), a <b>difficulty</b>, or play the <b>📅 Daily</b> — the same puzzle for everyone each day.</p>
-      </div>
-    </div>
-
-    <button class="ob-start" id="obStart">Start playing →</button>
-  </div>
-</div>
-
-<!-- Hint modal -->
-<div class="modal-overlay" id="hintModal" role="dialog" aria-modal="true">
-  <div class="modal">
-    <h3>Hint &amp; Reveal</h3>
-    <p>Using reveal removes this puzzle from your clean-solve streak.</p>
-    <div class="btn-row">
-      <button class="mbtn" id="hintLetter"><b>Reveal Letter</b><small>Current cell only</small></button>
-      <button class="mbtn" id="hintWord"><b>Reveal Word</b><small>Entire selected word</small></button>
-      <button class="mbtn dest" id="hintPuzzle"><b>Reveal Puzzle</b><small>Show all answers</small></button>
-    </div>
-    <button class="mcancel" id="hintCancel">Cancel</button>
-  </div>
-</div>
-
-<!-- Profile modal -->
-<div class="modal-overlay" id="profileModal" role="dialog" aria-modal="true">
-  <div class="modal pmodal">
-    <h3>Your Profile</h3>
-    <p style="color:var(--dim);font-size:.78rem;margin-bottom:0;">Saved on this device only. Cross-device accounts coming in a future update.</p>
-    <div class="stat-grid">
-      <div class="stat-box"><div class="stat-val" id="psSolved">0</div><div class="stat-lbl">Puzzles solved</div></div>
-      <div class="stat-box"><div class="stat-val" id="psStreak">0</div><div class="stat-lbl">🔥 Streak</div></div>
-      <div class="stat-box"><div class="stat-val" id="psBest">—</div><div class="stat-lbl">Best time</div></div>
-      <div class="stat-box"><div class="stat-val" id="psClean">0</div><div class="stat-lbl">Clean solves</div></div>
-    </div>
-    <input class="name-input" id="playerNameInput" type="text" maxlength="20" placeholder="Enter your name…" aria-label="Player name"/>
-    <button class="save-name" id="saveNameBtn">Save name</button>
-    <div id="historyList" style="margin-top:12px;max-height:120px;overflow-y:auto;"></div>
-    <button class="mcancel" id="profileClose">Close</button>
-  </div>
-</div>
-
-<!-- Settings drawer -->
-<div class="sd-backdrop" id="sdBackdrop"></div>
-<aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-label="Settings">
-  <div class="sd-header">
-    <h2>⚙ Settings</h2>
-    <button class="sd-close" id="sdClose">✕</button>
-  </div>
-  <div class="sd-section">
-    <h3>⏱ Timer</h3>
-    <div class="seg-ctrl">
-      <label><input type="radio" name="timerMode" value="up" id="tmUp"><span>Count up</span></label>
-      <label><input type="radio" name="timerMode" value="down" id="tmDown"><span>Countdown</span></label>
-      <label><input type="radio" name="timerMode" value="off" id="tmOff"><span>Hidden</span></label>
-    </div>
-    <div id="countdownRow" style="margin-top:8px;display:none;align-items:center;gap:8px;">
-      <span style="font-size:.8rem;color:var(--muted);">Limit</span>
-      <input type="number" id="countdownMins" min="1" max="60" value="5"/>
-      <span style="font-size:.8rem;color:var(--dim);">min</span>
+<section class="wrap">
+  <div class="final">
+    <h2>Start playing — it's free</h2>
+    <p>No account, no download. Open it and dig for words.</p>
+    <div class="cta-row" style="justify-content:center;">
+      <a class="btn primary lg" href="play.html">▶ Play Maneno</a>
+      <a class="btn ghost lg" href="register.html">Create a profile</a>
     </div>
   </div>
-  <div class="sd-section">
-    <h3>🔢 Word Count</h3>
-    <div class="slider-row">
-      <input type="range" id="wordCountSlider" min="4" max="12" value="8" step="1" aria-label="Word count"/>
-      <span class="slv" id="wordCountVal">8</span>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <div>
+      <div class="logo" style="font-size:1.2rem;">Maneno</div>
+      <div class="foot-meta">“Maneno” is Swahili for “words.” · Shona · Swahili · Zulu</div>
+    </div>
+    <div class="foot-links">
+      <a href="play.html">Play</a>
+      <a href="register.html">Sign up</a>
+      <a href="#features">Features</a>
     </div>
   </div>
-  <div class="sd-section">
-    <h3>🎯 Difficulty</h3>
-    <div class="seg-ctrl">
-      <label><input type="radio" name="complexity" value="easy" id="cxEasy"><span>Easy</span></label>
-      <label><input type="radio" name="complexity" value="medium" id="cxMedium" checked><span>Medium</span></label>
-      <label><input type="radio" name="complexity" value="hard" id="cxHard"><span>Hard</span></label>
-    </div>
-    <div class="hint-budget" id="sdHintDesc">Medium: all lengths · unlimited hints</div>
-  </div>
-  <div class="sd-section">
-    <h3>📚 Learn Mode</h3>
-    <div class="sd-toggle-row">
-      <span style="font-size:.84rem">Enable Learn Mode</span>
-      <label class="sd-toggle"><input type="checkbox" id="cbLearnMode"/><div class="sd-toggle-track"></div><div class="sd-toggle-thumb"></div></label>
-    </div>
-    <div style="font-size:.76rem;color:var(--dim);line-height:1.5;">Shows English meaning and pronunciation. Grid starts revealed — fill words from memory.</div>
-  </div>
-  <div class="sd-section">
-    <h3>⚡ Level Presets</h3>
-    <div class="level-presets">
-      <button class="lp-btn" id="lpBeginner">
-        <div><b>Beginner</b><small>4 words · easy · learn mode · no timer</small></div>
-        <span class="lp-badge b">BEGINNER</span>
-      </button>
-      <button class="lp-btn" id="lpIntermediate">
-        <div><b>Intermediate</b><small>7 words · medium · count-up</small></div>
-        <span class="lp-badge i">INTERMEDIATE</span>
-      </button>
-      <button class="lp-btn" id="lpAdvanced">
-        <div><b>Advanced</b><small>12 words · hard · 8-min countdown</small></div>
-        <span class="lp-badge a">ADVANCED</span>
-      </button>
-    </div>
-  </div>
-  <button class="sd-apply" id="sdApply">Apply &amp; New Puzzle</button>
-</aside>
+</footer>
 
-<!-- Keypad -->
-<div class="keypad" id="keypad" aria-label="Grapheme keypad" role="toolbar"></div>
-
-<script>
-"use strict";
-/* ============================================================
-   1. WORD BANK — 80+ words per language, 5-field format
-   [answer, clue_native, english, phonetic, category]
-   Category: family|animals|food|nature|places|body|time|values|household|numbers
-   ============================================================ */
-const LANGUAGES={
-  Shona:{
-    config:{language:"Shona",atomic_graphemes:["ch","sh","sv","zv","ng","mb","nd","nj","ny","nz","mh","pf","ts","dz","vh"],ignore_casing:true,strip_diacritics:false,preserve_marks:[]},
-    words:[
-      ["amai","Mubereki wechikadzi","mother","a·mai","family"],
-      ["baba","Mubereki wechirume","father","ba·ba","family"],
-      ["mwana","Mwana muduku ari kumba","child","mwa·na","family"],
-      ["mukoma","Mukoma wangu ari kukura","older sibling","mu·ko·ma","family"],
-      ["ambuya","Ambuya vanoita sadza","grandmother","am·bu·ya","family"],
-      ["sekuru","Sekuru vane ngano","grandfather / uncle","se·ku·ru","family"],
-      ["tete","Tete vanofarira vana","paternal aunt","te·te","family"],
-      ["mudzimai","Mudzimai wake anoimba","wife / woman","mu·dzi·mai","family"],
-      ["murume","Murume wake anoshandira","husband / man","mu·ru·me","family"],
-      ["mhuri","Mhuri yangu ine vanhu","family","mhu·ri","family"],
-      ["muzukuru","Muzukuru wangu ane makore gumi","grandchild / niece / nephew","mu·zu·ku·ru","family"],
-      ["muroora","Muroora wake anoita basa","daughter-in-law","mu·roo·ra","family"],
-      ["hanzvadzi","Hanzvadzi yangu iri kuchikoro","sibling","han·zva·dzi","family"],
-      ["mombe","Mombe inodya uswa","cow","mo·mbe","animals"],
-      ["imbwa","Imbwa inoruma","dog","im·bwa","animals"],
-      ["katsi","Katsi inobata mbeva","cat","ka·tsi","animals"],
-      ["shiri","Shiri inobhururuka","bird","shi·ri","animals"],
-      ["shumba","Shumba inyama yesango","lion","shum·ba","animals"],
-      ["nzou","Nzou ine mhino refu","elephant","nzou","animals"],
-      ["mbudzi","Mbudzi inodya mashizha","goat","mbu·dzi","animals"],
-      ["huku","Huku inobereka mazai","chicken","hu·ku","animals"],
-      ["mbeva","Mbeva inobva muimba","mouse / rat","mbe·va","animals"],
-      ["nguruve","Nguruve inofarira matope","pig","ngu·ru·ve","animals"],
-      ["tsuro","Tsuro inomhanya","rabbit / hare","tsu·ro","animals"],
-      ["hove","Hove dzinogara mumvura","fish","ho·ve","animals"],
-      ["gudo","Gudo rinogara pamawere","baboon","gu·do","animals"],
-      ["soko","Soko rinogara mumiti","monkey","so·ko","animals"],
-      ["sadza","Sadza ndicho chikafu chedu","thick maize porridge","sa·dza","food"],
-      ["nyama","Nyama yemombe inonaka","meat","nya·ma","food"],
-      ["muriwo","Muriwo unodya madekwana","vegetables / relish","mu·ri·wo","food"],
-      ["dovi","Dovi rinoitwa nenzungu","peanut butter","do·vi","food"],
-      ["chibage","Chibage chinoitwa sadza","maize cob","chi·ba·ge","food"],
-      ["mazai","Mazai ehuku anochekwa","eggs","ma·zai","food"],
-      ["mukaka","Mukaka unobva kumombe","milk","mu·ka·ka","food"],
-      ["bota","Bota rinoitwa mangwana","thin porridge","bo·ta","food"],
-      ["nyimo","Nyimo dzinobikwa","bambara nuts","nyi·mo","food"],
-      ["tsanga","Mbeu yezvirimwa","grain / seed","tsa·nga","food"],
-      ["muti","Muti une mashizha","tree","mu·ti","nature"],
-      ["nyika","Nyika yedu inonaka","country / land","nyi·ka","nature"],
-      ["rwizi","Rwizi runoyerera","river","rwi·zi","nature"],
-      ["denga","Denga rine nyeredzi","sky","de·nga","nature"],
-      ["zuva","Zuva rinobuda mangwanani","sun / day","zu·va","nature"],
-      ["mwedzi","Mwedzi unoonekwa usiku","moon / month","mwe·dzi","nature"],
-      ["nyeredzi","Nyeredzi dzinokwira usiku","stars","nye·re·dzi","nature"],
-      ["mvura","Mvura inaya kubva denga","rain / water","mvu·ra","nature"],
-      ["moto","Moto unopisa zvakanyanya","fire","mo·to","nature"],
-      ["guruva","Guruva rinomuka pasi","dust","gu·ru·va","nature"],
-      ["jani","Jani remusango","leaf","ja·ni","nature"],
-      ["dombo","Dombo guru rine simba","rock / stone","do·mbo","nature"],
-      ["mhepo","Mhepo inobhururuka","wind / air","mhe·po","nature"],
-      ["gomo","Gomo redu rine chando","mountain / hill","go·mo","nature"],
-      ["sango","Sango rine miti mizhinji","forest / bush","sa·ngo","nature"],
-      ["musha","Musha wedu uri kunyika","home village","mu·sha","places"],
-      ["chikoro","Nzvimbo inodzidzirwa vana","school","chi·ko·ro","places"],
-      ["nzira","Nzira inoenda kumusha","road / path","nzi·ra","places"],
-      ["guta","Guta guru riri Harare","city / town","gu·ta","places"],
-      ["munda","Munda une chibage","field / farm","mu·nda","places"],
-      ["chitoro","Chitoro chine zvinhu zvakawanda","shop / store","chi·to·ro","places"],
-      ["chipatara","Chipatara chine chiremba","hospital","chi·pa·ta·ra","places"],
-      ["chechi","Chechi ine vanhu vekunamata","church","che·chi","places"],
-      ["bonde","Bonde rine uswa hurefu","valley","bo·nde","places"],
-      ["musoro","Musoro ndewako","head","mu·so·ro","body"],
-      ["moyo","Moyo unorova nguva dzose","heart","mo·yo","body"],
-      ["ruoko","Ruoko rwunobata zvinhu","hand / arm","ruo·ko","body"],
-      ["gumbo","Gumbo rinofambisa munhu","leg / foot","gu·mbo","body"],
-      ["nzeve","Nzeve dzinonzwa mazwi","ears","nze·ve","body"],
-      ["muromo","Muromo unotaura mazwi","mouth","mu·ro·mo","body"],
-      ["mhino","Mhino inanhuhwirira","nose","mhi·no","body"],
-      ["tsoka","Tsoka dzinofamba pasi","feet","tso·ka","body"],
-      ["chipfuva","Chipfuva chine moyo mukati","chest","chi·pfu·va","body"],
-      ["bvudzi","Bvudzi riri pamusoro","hair","bvu·dzi","body"],
-      ["mangwanani","Mangwanani tinosimuka","morning","ma·ngwa·na·ni","time"],
-      ["masikati","Masikati zuva rinopisa","afternoon","ma·si·ka·ti","time"],
-      ["usiku","Usiku tinorara","night","u·si·ku","time"],
-      ["nhasi","Nhasi ndirini?","today","nha·si","time"],
-      ["mangwana","Mangwana tichaenda","tomorrow","ma·ngwa·na","time"],
-      ["nezuro","Nezuro takaenda","yesterday","ne·zu·ro","time"],
-      ["gore","Gore rino rine mvura","year","go·re","time"],
-      ["svondo","Svondo tinonamata","week / Sunday","svo·ndo","time"],
-      ["rudo","Rudo runobatanidza vanhu","love","ru·do","values"],
-      ["unhu","Unhu ndohushamwari","ubuntu / humanity","u·nhu","values"],
-      ["simba","Simba rinobva muMwari","strength","si·mba","values"],
-      ["shamwari","Shamwari yangu yakanaka","friend","sha·mwa·ri","values"],
-      ["rugare","Rugare runoda moyo","peace","ru·ga·re","values"],
-      ["kutenda","Kutenda kunofadza","gratitude / faith","ku·te·nda","values"],
-      ["ngoma","Chiridzwa chinorohwa","drum","ngo·ma","values"],
-      ["mbira","Chiridzwa chine simbi","thumb piano","mbi·ra","values"],
-      ["imba","Imba yedu ine makamuri","house / home","i·mba","household"],
-      ["gonhi","Gonhi riri kuvhurika","door","go·nhi","household"],
-      ["hwindo","Hwindo rine girimisi","window","hwi·ndo","household"],
-      ["tafura","Tafura ine zvokudya","table","ta·fu·ra","household"],
-      ["chigaro","Chigaro chinogara vanhu","chair / seat","chi·ga·ro","household"],
-      ["mukombe","Mukombe une mvura","cup","mu·ko·mbe","household"],
-      ["jiko","Jiko rinopisa nemoto","stove / fireplace","ji·ko","household"],
-      ["ndiro","Ndiro ine sadza","plate / dish","ndi·ro","household"],
-      ["mubhedha","Mubhedha une mirinda","bed","mu·bhe·dha","household"],
-      ["piri","Piri ndiwo nhamba yechipiri","two","pi·ri","numbers"],
-      ["tatu","Tatu ndiwo nhamba yechitatu","three","ta·tu","numbers"],
-      ["shanu","Shanu ndiwo nhamba yechishanu","five","sha·nu","numbers"],
-      ["tanhatu","Tanhatu ndiwo nhamba yechitanhatu","six","ta·nha·tu","numbers"],
-      ["nomwe","Nomwe ndiwo nhamba yechinomwe","seven","no·mwe","numbers"],
-      ["sere","Sere ndiwo nhamba yechisere","eight","se·re","numbers"],
-      ["gumi","Gumi ndiwo nhamba yechigumi","ten","gu·mi","numbers"],
-      ["zana","Zana ndiwo nhamba zana","hundred","za·na","numbers"],
-      ["mzukuru","Mwana wemwana wako","grandchild","mu·zu·ku·ru","family"],
-      ["babamukuru","Mukoma wababa vako","father's older brother / uncle","ba·ba·mu·ku·ru","family"],
-      ["babamunini","Munin'ina wababa vako","father's younger brother / uncle","ba·ba·mu·ni·ni","family"],
-      ["maiguru","Mukadzi wababamukuru","aunt / co-wife (senior)","ma·i·gu·ru","family"],
-      ["mainini","Munin'ina waamai","aunt / mother's younger sister","ma·i·ni·ni","family"],
-      ["mukwasha","Murume wemwanasikana","son-in-law","mu·kwa·sha","family"],
-      ["mwanasikana","Mwana wechikadzi","daughter","mwa·na·si·ka·na","family"],
-      ["mwanakomana","Mwana wechirume","son","mwa·na·ko·ma·na","family"],
-      ["mhuru","Mwana wemombe","calf","mhu·ru","animals"],
-      ["bhiza","Mhuka inotakura vanhu","horse","bhi·za","animals"],
-      ["dhongi","Mhuka inotakura mitoro","donkey","dho·ngi","animals"],
-      ["nyoka","Inokambaira pasi","snake","nyo·ka","animals"],
-      ["datya","Rinosvetuka mumvura","frog","da·tya","animals"],
-      ["nyuchi","Inogadzira uchi","bee","nyu·chi","animals"],
-      ["nhunzi","Inomhara pazvokudya","fly","nhu·nzi","animals"],
-      ["gonzo","Mbeva huru yemumba","rat","go·nzo","animals"],
-      ["ngwena","Mhuka huru yemurwizi","crocodile","ngwe·na","animals"],
-      ["mhembwe","Mhuka diki yesango","duiker / antelope","mhe·mbwe","animals"],
-      ["nzungu","Inodyiwa, inoita dovi","peanut / groundnut","nzu·ngu","food"],
-      ["mupunga","Zvokudya zvichena zvinobikwa","rice","mu·pu·nga","food"],
-      ["nyemba","Tsanga dzemumunda","cowpeas / beans","nye·mba","food"],
-      ["manhanga","Muriwo unobva kumudzimba","pumpkin","ma·nha·nga","food"],
-      ["muboora","Mashizha emanhanga anodyiwa","pumpkin leaves","mu·bo·o·ra","food"],
-      ["nyevhe","Muriwo wesango unodyiwa","spider plant (relish)","nye·vhe","food"],
-      ["mufushwa","Muriwo wakaomeswa","dried vegetables","mu·fu·shwa","food"],
-      ["maputi","Chibage chakakangwa","roasted maize","ma·pu·ti","food"],
-      ["mvuu","Mhuka huru inogara mumvura","hippopotamus","mvu·u","animals"],
-      ["munyu","Unoisa kuti zvokudya zvinake","salt","mu·nyu","food"],
-      ["uchi","Zvinotapira zvinobva kunyuchi","honey","u·chi","food"],
-      ["mafuta","Anoshandiswa kubika","oil / fat","ma·fu·ta","food"],
-      ["chingwa","Chinodyiwa mangwanani","bread","chi·ngwa","food"],
-      ["doro","Hwahwa hwechivanhu","beer","do·ro","food"],
-      ["rurimi","Runoshandiswa kuravira","tongue","ru·ri·mi","body"],
-      ["ziso","Rinoshandiswa kuona","eye","zi·so","body"],
-      ["chiuno","Pakati pemuviri","waist","chi·u·no","body"],
-      ["bendekete","Pamusoro peruoko","shoulder","be·nde·ke·te","body"],
-      ["chibvi","Panopinda gumbo","knee","chi·bvi","body"],
-      ["munwe","Chikamu cheruoko","finger","mu·nwe","body"],
-      ["ropa","Zvitsvuku zviri mumuviri","blood","ro·pa","body"],
-      ["ganda","Rinofukidza muviri","skin","ga·nda","body"],
-      ["chitubu","Panobuda mvura yepasi","spring / fountain","chi·tu·bu","nature"],
-      ["dziva","Mvura yakamira pasango","pool / pond","dzi·va","nature"],
-      ["jecha","Zvidiki zvepasi pedyo nerwizi","sand","je·cha","nature"],
-      ["ivhu","Pasi panodyarwa zvirimwa","soil / earth","i·vhu","nature"],
-      ["chando","Kutonhora kwakanyanya","cold / frost","cha·ndo","nature"],
-      ["mhute","Inofukidza pasango mangwanani","mist / fog","mhu·te","nature"],
-      ["dutu","Mhepo ine simba","storm","du·tu","nature"],
-      ["bani","Nzvimbo yakati sandara","plain / open field","ba·ni","nature"],
-      ["chikomo","Gomo diki","hill","chi·ko·mo","nature"],
-      ["dunhu","Nzvimbo yakacherwa","district / region","du·nhu","places"],
-      ["musika","Panotengeswa zvinhu","market","mu·si·ka","places"],
-      ["mabhuku","Zvinoverengwa kuchikoro","books","ma·bhu·ku","household"],
-      ["poto","Inoshandiswa kubika","pot","po·to","household"],
-      ["hari","Mudziyo wevhu wokubika","clay pot","ha·ri","household"],
-      ["banga","Chinoshandiswa kucheka","knife","ba·nga","household"],
-      ["demo","Chinoshandiswa kutema huni","axe","de·mo","household"],
-      ["badza","Chinoshandiswa kurima","hoe","ba·dza","household"],
-      ["rusero","Chinoshandiswa kuzunza upfu","winnowing basket","ru·se·ro","household"],
-      ["tswanda","Dengu rokutakura zvinhu","basket","tswa·nda","household"],
-      ["gumbeze","Chokufuga pakurara","blanket","gu·mbe·ze","household"],
-      ["ina","Nhamba inotevera tatu","four","i·na","numbers"],
-      ["chokwadi","Chinhu chisina manyepo","truth","cho·kwa·di","values"],
-      ["runyararo","Kusava nehondo","peace","ru·nya·ra·ro","values"],
-      ["tsitsi","Kunzwira mumwe urombo","mercy / compassion","tsi·tsi","values"],
-      ["ushingi","Kuva nesimba remwoyo","courage / bravery","u·shi·ngi","values"],
-      ["nguva","Zvinoyerwa newachi","time","ngu·va","time"]
-    ]
-  },
-  Swahili:{
-    config:{language:"Swahili",atomic_graphemes:["ng'","ch","sh","gh","kh","th","dh","ng","ny","mb","nd"],ignore_casing:true,strip_diacritics:true,preserve_marks:["'"]},
-    words:[
-      ["mama","Mama yangu anapenda familia","mother","ma·ma","family"],
-      ["baba","Baba yangu anafanya kazi","father","ba·ba","family"],
-      ["mtoto","Mtoto mdogo anacheza","child","mto·to","family"],
-      ["kaka","Kaka yangu ni mkubwa","older brother","ka·ka","family"],
-      ["dada","Dada yangu ni mzuri","older sister","da·da","family"],
-      ["bibi","Bibi yangu ana umri mkubwa","grandmother","bi·bi","family"],
-      ["babu","Babu yangu ana nguvu","grandfather","ba·bu","family"],
-      ["shangazi","Shangazi yangu ni mpole","paternal aunt","sha·nga·zi","family"],
-      ["mjomba","Mjomba wangu ni mrefu","maternal uncle","mjo·mba","family"],
-      ["mke","Mke wake ni mzuri sana","wife","mke","family"],
-      ["mume","Mume wake anafanya kazi","husband","mu·me","family"],
-      ["ndugu","Ndugu yangu yupo hapa","sibling / relative","ndu·gu","family"],
-      ["mjukuu","Mjukuu wangu ni mdogo","grandchild","mju·kuu","family"],
-      ["ng'ombe","Ng'ombe wangu ana nguvu","cow","ng'·o·mbe","animals"],
-      ["mbwa","Mbwa wangu ni mzuri","dog","mbwa","animals"],
-      ["paka","Paka anakimbia haraka","cat","pa·ka","animals"],
-      ["ndege","Ndege anaruka angani","bird","nde·ge","animals"],
-      ["simba","Simba ni mfalme wa msitu","lion","si·mba","animals"],
-      ["tembo","Tembo ana mkono mrefu","elephant","te·mbo","animals"],
-      ["mbuzi","Mbuzi anakula majani","goat","mbu·zi","animals"],
-      ["kuku","Kuku anaweza kutaga mayai","chicken","ku·ku","animals"],
-      ["panya","Panya anapenda chakula","rat / mouse","pa·nya","animals"],
-      ["nguruwe","Nguruwe anapenda matope","pig","ngu·ru·we","animals"],
-      ["sungura","Sungura anakimbia upesi","rabbit / hare","su·ngu·ra","animals"],
-      ["samaki","Samaki anaishi majini","fish","sa·ma·ki","animals"],
-      ["nyoka","Nyoka anatambaa ardhini","snake","nyo·ka","animals"],
-      ["farasi","Farasi anakimbia kwa kasi","horse","fa·ra·si","animals"],
-      ["kondoo","Kondoo ana manyoya mazuri","sheep","ko·ndoo","animals"],
-      ["chakula","Chakula hiki ni kitamu","food","cha·ku·la","food"],
-      ["nyama","Nyama ya ng'ombe ni nzuri","meat","nya·ma","food"],
-      ["ugali","Ugali ni chakula cha Afrika","stiff porridge","u·ga·li","food"],
-      ["wali","Wali na mchuzi ni tamu","cooked rice","wa·li","food"],
-      ["mboga","Mboga za majani ni muhimu","vegetables","mbo·ga","food"],
-      ["mahindi","Mahindi yanakua shambani","corn / maize","ma·hi·ndi","food"],
-      ["mayai","Mayai ya kuku ni mazuri","eggs","ma·ya·i","food"],
-      ["maziwa","Maziwa ya ng'ombe ni mazuri","milk","ma·zi·wa","food"],
-      ["chai","Chai ya asubuhi ni tamu","tea","chai","food"],
-      ["mkate","Mkate na siagi ni tamu","bread","mka·te","food"],
-      ["sukari","Sukari inatia utamu","sugar","su·ka·ri","food"],
-      ["mchuzi","Mchuzi wa nyama unawaka","sauce / stew","mchu·zi","food"],
-      ["ndizi","Ndizi ni tamu sana","banana","ndi·zi","food"],
-      ["embe","Embe ni tamu wakati wa kiangazi","mango","e·mbe","food"],
-      ["mchele","Mchele unapikwa na maji","uncooked rice","mche·le","food"],
-      ["mti","Mti huu una matunda","tree","mti","nature"],
-      ["nchi","Nchi yetu ni nzuri sana","country / land","nchi","nature"],
-      ["mlima","Mlima mrefu una theluji","mountain","mli·ma","nature"],
-      ["mto","Mto unatiririka","river","mto","nature"],
-      ["jua","Jua linachomoza asubuhi","sun","ju·a","nature"],
-      ["mwezi","Mwezi unaonekana usiku","moon / month","mwe·zi","nature"],
-      ["nyota","Nyota zinaangaza usiku","stars","nyo·ta","nature"],
-      ["mvua","Mvua inanyesha siku ya leo","rain","mvu·a","nature"],
-      ["moto","Moto unawaka jikoni","fire","mo·to","nature"],
-      ["upepo","Upepo unavuma leo","wind","u·pe·po","nature"],
-      ["bahari","Bahari ina maji mengi","sea / ocean","ba·ha·ri","nature"],
-      ["msitu","Msitu una miti mingi","forest","msi·tu","nature"],
-      ["ziwa","Ziwa lina maji baridi","lake","zi·wa","nature"],
-      ["mbingu","Mbingu zina mawingu","sky / heavens","mbi·ngu","nature"],
-      ["ardhi","Ardhi hii ni nzuri","earth / ground","a·rdhi","nature"],
-      ["shule","Mahali wanafunzi husoma","school","shu·le","places"],
-      ["nyumba","Mahali pa kuishi","house / home","nyu·mba","places"],
-      ["mji","Mji mkubwa una watu wengi","city / town","mji","places"],
-      ["kijiji","Kijiji kidogo kina amani","village","ki·ji·ji","places"],
-      ["duka","Duka hili lina bidhaa nyingi","shop / store","du·ka","places"],
-      ["hospitali","Hospitali ina madaktari wengi","hospital","ho·spi·ta·li","places"],
-      ["kanisa","Kanisa lina waumini wengi","church","ka·ni·sa","places"],
-      ["shamba","Mahali pa kulima","farm / field","sha·mba","places"],
-      ["barabara","Barabara hii ni ndefu","road / street","ba·ra·ba·ra","places"],
-      ["soko","Soko lina bidhaa za kila aina","market","so·ko","places"],
-      ["bandari","Bandari ina meli nyingi","port / harbor","ba·nda·ri","places"],
-      ["msikiti","Msikiti una waumini wengi","mosque","msi·ki·ti","places"],
-      ["kichwa","Kichwa changu kinauma","head","ki·chwa","body"],
-      ["moyo","Moyo wangu unapiga nguvu","heart","mo·yo","body"],
-      ["mkono","Mkono wangu una nguvu","hand / arm","mko·no","body"],
-      ["mguu","Mguu wangu unauma leo","leg / foot","mguu","body"],
-      ["macho","Macho yangu yanaona vizuri","eyes","ma·cho","body"],
-      ["masikio","Masikio yangu yanasikia","ears","ma·si·ki·o","body"],
-      ["mdomo","Mdomo wangu unasema","mouth","mdo·mo","body"],
-      ["pua","Pua yangu inanuka harufu","nose","pu·a","body"],
-      ["tumbo","Tumbo langu linauma","stomach","tu·mbo","body"],
-      ["uso","Uso wake ni mzuri","face","u·so","body"],
-      ["meno","Meno yangu ni meupe","teeth","me·no","body"],
-      ["bega","Bega langu lina mzigo","shoulder","be·ga","body"],
-      ["asubuhi","Asubuhi tunaamka mapema","morning","a·su·bu·hi","time"],
-      ["mchana","Mchana jua linachoma","midday / afternoon","mcha·na","time"],
-      ["jioni","Jioni tunakaa pamoja","evening","jio·ni","time"],
-      ["usiku","Usiku tunalala","night","u·si·ku","time"],
-      ["leo","Leo ni siku nzuri","today","le·o","time"],
-      ["kesho","Kesho tutaenda sokoni","tomorrow","ke·sho","time"],
-      ["jana","Jana tulikwenda shuleni","yesterday","ja·na","time"],
-      ["mwaka","Mwaka huu una furaha","year","mwa·ka","time"],
-      ["wiki","Wiki hii ina siku saba","week","wi·ki","time"],
-      ["siku","Siku ya leo ni nzuri","day","si·ku","time"],
-      ["saa","Saa ngapi sasa hivi?","hour / watch / time","saa","time"],
-      ["upendo","Upendo ni zawadi ya Mungu","love","u·pe·ndo","values"],
-      ["heshima","Heshima inastahili kutolewa","respect","he·shi·ma","values"],
-      ["utu","Utu ndio msingi wa maisha","ubuntu / humanity","u·tu","values"],
-      ["amani","Amani inahitajika kila mahali","peace","a·ma·ni","values"],
-      ["nguvu","Nguvu zinatoka kwa Mungu","strength / power","ngu·vu","values"],
-      ["furaha","Furaha inafanya moyo upige","joy / happiness","fu·ra·ha","values"],
-      ["rafiki","Rafiki mwema ni hazina","friend","ra·fi·ki","values"],
-      ["imani","Imani ni nguvu ya roho","faith / belief","i·ma·ni","values"],
-      ["umoja","Umoja ni nguvu kubwa","unity","u·mo·ja","values"],
-      ["huruma","Huruma inaonyesha upole","compassion / mercy","hu·ru·ma","values"],
-      ["dhahabu","Madini ya thamani","gold","dha·ha·bu","values"],
-      ["ghali","Chenye bei kubwa","expensive","gha·li","values"],
-      ["mlango","Mlango unafunguka asubuhi","door","mla·ngo","household"],
-      ["dirisha","Dirisha linaingiza mwanga","window","di·ri·sha","household"],
-      ["kitanda","Kitanda changu ni laini","bed","ki·ta·nda","household"],
-      ["meza","Meza ina vitabu vingi","table","me·za","household"],
-      ["kiti","Kiti kizuri kina starehe","chair / seat","ki·ti","household"],
-      ["sufuria","Sufuria inatumika kupikia","cooking pot","su·fu·ria","household"],
-      ["kikombe","Kikombe cha chai ni kidogo","cup","ki·ko·mbe","household"],
-      ["jiko","Jiko linawaka kwa moto","stove / cooker","ji·ko","household"],
-      ["sahani","Sahani ina chakula","plate / dish","sa·ha·ni","household"],
-      ["mkeka","Mkeka unalazwa chini","mat / rug","mke·ka","household"],
-      ["mbili","Mbili ni nambari ya pili","two","mbi·li","numbers"],
-      ["tatu","Tatu ni nambari ya tatu","three","ta·tu","numbers"],
-      ["tano","Tano ni nambari ya tano","five","ta·no","numbers"],
-      ["sita","Sita ni nambari ya sita","six","si·ta","numbers"],
-      ["saba","Saba ni nambari ya saba","seven","sa·ba","numbers"],
-      ["nane","Nane ni nambari ya nane","eight","na·ne","numbers"],
-      ["tisa","Tisa ni nambari ya tisa","nine","ti·sa","numbers"],
-      ["kumi","Kumi ni nambari ya kumi","ten","ku·mi","numbers"],
-      ["ishirini","Ishirini ni mara mbili ya kumi","twenty","i·shi·ri·ni","numbers"],
-      ["thelathini","Thelathini ni mara tatu ya kumi","thirty","the·la·thi·ni","numbers"],
-      ["elfu","Elfu ni nambari kubwa sana","thousand","e·lfu","numbers"],
-      ["mtu","Binadamu mmoja yeyote","person","m·tu","family"],
-      ["watu","Binadamu wengi kwa pamoja","people","wa·tu","family"],
-      ["binti","Mtoto wa kike wa mtu","daughter","bi·nti","family"],
-      ["mvulana","Mtoto wa kiume","boy","mvu·la·na","family"],
-      ["msichana","Mtoto wa kike","girl","msi·cha·na","family"],
-      ["mzee","Mtu aliyezeeka sana","elder","mze·e","family"],
-      ["jirani","Mtu anayeishi karibu nawe","neighbor","ji·ra·ni","family"],
-      ["mwalimu","Mtu anayefundisha shuleni","teacher","mwa·li·mu","family"],
-      ["mgeni","Mtu anayetembelea","guest / stranger","mge·ni","family"],
-      ["chui","Mnyama mwenye madoadoa","leopard","chu·i","animals"],
-      ["twiga","Mnyama mwenye shingo ndefu","giraffe","twi·ga","animals"],
-      ["kiboko","Mnyama mkubwa wa majini","hippopotamus","ki·bo·ko","animals"],
-      ["kima","Aina ya nyani mdogo","monkey","ki·ma","animals"],
-      ["nyani","Mnyama anayepanda miti","baboon","nya·ni","animals"],
-      ["popo","Mnyama anayeruka usiku","bat","po·po","animals"],
-      ["mamba","Mnyama hatari wa mtoni","crocodile","ma·mba","animals"],
-      ["nyuki","Mdudu anayetengeneza asali","bee","nyu·ki","animals"],
-      ["buibui","Mdudu anayefuma utando","spider","bui·bui","animals"],
-      ["kobe","Mnyama mwenye gamba gumu","tortoise","ko·be","animals"],
-      ["punda","Mnyama anayebeba mizigo","donkey","pu·nda","animals"],
-      ["fisi","Mnyama anayecheka usiku","hyena","fi·si","animals"],
-      ["asali","Kitu kitamu kutoka kwa nyuki","honey","a·sa·li","food"],
-      ["chumvi","Kitu cha kuongeza ladha","salt","chu·mvi","food"],
-      ["pilipili","Kiungo chenye ukali","pepper / chili","pi·li·pi·li","food"],
-      ["mafuta","Kitu cha kupikia chenye unyevu","oil / fat","ma·fu·ta","food"],
-      ["unga","Mahindi yaliyosagwa","flour","u·nga","food"],
-      ["matunda","Vyakula vitamu vya miti","fruits","ma·tu·nda","food"],
-      ["nazi","Tunda la mnazi","coconut","na·zi","food"],
-      ["chungwa","Tunda la rangi ya machungwa","orange","chu·ngwa","food"],
-      ["nanasi","Tunda lenye taji","pineapple","na·na·si","food"],
-      ["viazi","Mboga inayootea ardhini","potatoes","vi·a·zi","food"],
-      ["maua","Vitu vizuri vya mimea","flowers","ma·u·a","nature"],
-      ["jiwe","Kitu kigumu cha ardhini","stone","ji·we","nature"],
-      ["mchanga","Vumbi laini la pwani","sand","mcha·nga","nature"],
-      ["wingu","Kitu cheupe angani","cloud","wi·ngu","nature"],
-      ["theluji","Maji yaliyoganda meupe","snow","the·lu·ji","nature"],
-      ["umeme","Mwanga wa radi angani","lightning","u·me·me","nature"],
-      ["majani","Sehemu za kijani za mti","leaves / grass","ma·ja·ni","nature"],
-      ["mwamba","Jiwe kubwa gumu","rock","mwa·mba","nature"],
-      ["jangwa","Eneo kavu lenye mchanga","desert","ja·ngwa","nature"],
-      ["kisima","Shimo la kupata maji","well","ki·si·ma","nature"],
-      ["mfereji","Njia ya kupitisha maji","canal / ditch","mfe·re·ji","nature"],
-      ["chumba","Sehemu moja ndani ya nyumba","room","chu·mba","places"],
-      ["choo","Mahali pa kujisaidia","toilet","cho·o","places"],
-      ["jiji","Mji mkubwa sana","city","ji·ji","places"],
-      ["uwanja","Eneo wazi la michezo","field / ground","uwa·nja","places"],
-      ["daraja","Njia ya kuvuka mto","bridge","da·ra·ja","places"],
-      ["kiwanda","Mahali pa kutengeneza bidhaa","factory","ki·wa·nda","places"],
-      ["ofisi","Mahali pa kufanyia kazi","office","o·fi·si","places"],
-      ["gereza","Mahali pa kufungia wahalifu","prison","ge·re·za","places"],
-      ["kidole","Sehemu ndogo ya mkono","finger","ki·do·le","body"],
-      ["nywele","Vitu vinavyoota kichwani","hair","nywe·le","body"],
-      ["ulimi","Kiungo cha kuonja kinywani","tongue","u·li·mi","body"],
-      ["shingo","Sehemu kati ya kichwa na mwili","neck","shi·ngo","body"],
-      ["damu","Maji mekundu mwilini","blood","da·mu","body"],
-      ["mfupa","Kitu kigumu ndani ya mwili","bone","mfu·pa","body"],
-      ["ngozi","Kifuniko cha nje cha mwili","skin","ngo·zi","body"],
-      ["kidevu","Sehemu ya chini ya uso","chin","ki·de·vu","body"],
-      ["dakika","Sehemu ndogo ya saa","minute","da·ki·ka","time"],
-      ["sasa","Wakati huu wa hivi karibuni","now","sa·sa","time"],
-      ["zamani","Wakati uliopita kitambo","past / old times","za·ma·ni","time"],
-      ["ukweli","Kitu kisicho na uongo","truth","u·kwe·li","values"],
-      ["haki","Kitu cha sawa na adili","justice / right","ha·ki","values"],
-      ["uhuru","Hali ya kutokuwa mtumwa","freedom","u·hu·ru","values"],
-      ["uvumilivu","Hali ya kustahimili","patience","u·vu·mi·li·vu","values"],
-      ["ukarimu","Hali ya kupenda kutoa","generosity","u·ka·ri·mu","values"],
-      ["bidii","Kufanya kazi kwa juhudi","diligence","bi·di·i","values"],
-      ["kioo","Kitu cha kujionea sura","mirror / glass","ki·o·o","household"],
-      ["ufagio","Kitu cha kufagia sakafu","broom","u·fa·gi·o","household"],
-      ["sabuni","Kitu cha kuoshea uchafu","soap","sa·bu·ni","household"],
-      ["taa","Kitu cha kutoa mwanga","lamp / light","ta·a","household"],
-      ["kisu","Kitu cha kukatia","knife","ki·su","household"],
-      ["uma","Kitu cha kulia chakula","fork","u·ma","household"],
-      ["ndoo","Chombo cha kubebea maji","bucket","ndo·o","household"],
-      ["moja","Namba ya kwanza kabisa","one","mo·ja","numbers"],
-      ["nne","Namba kati ya tatu na tano","four","nne","numbers"],
-      ["mia","Makumi kumi kwa pamoja","hundred","mi·a","numbers"],
-      ["milioni","Idadi kubwa sana ya elfu","million","mi·li·o·ni","numbers"]
-    ]
-  },
-  Zulu:{
-    config:{language:"Zulu",atomic_graphemes:["ngc","ngq","ngx","nkc","nkq","nkx","ntsh","tsh","dlw","shw","bh","ch","dl","gc","gq","gx","hh","hl","kh","kl","ph","sh","th","ts","ny","ng","nc","nq","nx","c","q","x"],ignore_casing:true,strip_diacritics:false,preserve_marks:[]},
-    beta:true,
-    words:[
-      ["umama","umzali wesifazane","mother","u·ma·ma","family"],
-      ["ubaba","umzali wesilisa","father","u·ba·ba","family"],
-      ["umfana","umntwana wesilisa","boy","um·fa·na","family"],
-      ["intombazane","umntwana wesifazane","girl","i·nto·mba·za·ne","family"],
-      ["ingane","umntwana omncane","child","i·nga·ne","family"],
-      ["udadewethu","Udade womndeni wakwethu","my sister","u·da·de·we·thu","family"],
-      ["umfowethu","Umfana womndeni wakwethu","my brother","um·fo·we·thu","family"],
-      ["ugogo","umama kamama","grandmother","u·go·go","family"],
-      ["umkhulu","ubaba kababa","grandfather","um·khu·lu","family"],
-      ["umngane","umuntu omthandayo","friend","um·nga·ne","family"],
-      ["inja","isilwane esikhonkothayo","dog","i·nja","animals"],
-      ["ikati","isilwane esincane sasekhaya","cat","i·ka·ti","animals"],
-      ["inkomo","isilwane esikhulu sasepulazini","cow","i·nko·mo","animals"],
-      ["imbuzi","isilwane esinezimpondo","goat","i·mbu·zi","animals"],
-      ["ingulube","isilwane esikhuluphele","pig","i·ngu·lu·be","animals"],
-      ["inkukhu","inyoni ezalela amaqanda","chicken","i·nku·khu","animals"],
-      ["ihhashi","isilwane esigitshelwayo","horse","i·hha·shi","animals"],
-      ["ingwe","isilwane esinamabala","leopard","i·ngwe","animals"],
-      ["ibhubesi","inkosi yezilwane","lion","i·bhu·be·si","animals"],
-      ["indlovu","isilwane esikhulu kunazo zonke","elephant","i·ndlo·vu","animals"],
-      ["inyoka","isilwane esihuquzelayo","snake","i·nyo·ka","animals"],
-      ["inyoni","isilwane esindizayo","bird","i·nyo·ni","animals"],
-      ["intuthwane","isinambuzane esincane","ant","i·ntu·thwa·ne","animals"],
-      ["ukudla","into esiyidlayo","food","u·ku·dla","food"],
-      ["isinkwa","ukudla okubhakiwe","bread","i·si·nkwa","food"],
-      ["ubisi","okuphuma enkomeni","milk","u·bi·si","food"],
-      ["inyama","ukudla okuvela ezilwaneni","meat","i·nya·ma","food"],
-      ["amazambane","ukudla okumbiwa emhlabathini","potatoes","a·ma·za·mba·ne","food"],
-      ["itiye","isiphuzo esishisayo","tea","i·ti·ye","food"],
-      ["ilanga","liyakhanya emini","sun","i·la·nga","nature"],
-      ["inyanga","ikhanya ebusuku","moon","i·nya·nga","nature"],
-      ["amanzi","aphuzwayo nawagelezayo","water","a·ma·nzi","nature"],
-      ["umoya","esiwuphefumulayo","wind / spirit","u·mo·ya","nature"],
-      ["imvula","amanzi awa esibhakabhakeni","rain","i·mvu·la","nature"],
-      ["umlilo","into eshisayo evuthayo","fire","u·mli·lo","nature"],
-      ["intaba","indawo ephakeme emhlabeni","mountain","i·nta·ba","nature"],
-      ["umfula","amanzi agelezayo","river","u·mfu·la","nature"],
-      ["isihlahla","simila phansi sinamagatsha","tree","i·si·hla·hla","nature"],
-      ["izulu","esibhakabhaka esiphezulu","sky","i·zu·lu","nature"],
-      ["ikhaya","indawo esihlala kuyo","home","i·kha·ya","places"],
-      ["isikole","indawo yokufunda","school","i·si·ko·le","places"],
-      ["idolobha","indawo enezitolo eziningi","town","i·do·lo·bha","places"],
-      ["ikhanda","ingxenye ephezulu yomzimba","head","i·kha·nda","body"],
-      ["amehlo","esibona ngawo","eyes","a·me·hlo","body"],
-      ["indlebe","esizwa ngayo","ear","i·ndle·be","body"],
-      ["umlomo","esikhuluma ngawo","mouth","u·mlo·mo","body"],
-      ["isandla","esibamba ngaso","hand","i·sa·ndla","body"],
-      ["unyawo","esihamba ngalo","foot","u·nya·wo","body"],
-      ["inhliziyo","eshaya esifubeni","heart","i·nhli·zi·yo","body"],
-      ["usuku","amahora angamashumi amabili nane","day","u·su·ku","time"],
-      ["ubusuku","isikhathi sobumnyama","night","u·bu·su·ku","time"],
-      ["namuhla","usuku esikulo manje","today","na·mu·hla","time"],
-      ["izolo","usuku oludlule","yesterday","i·zo·lo","time"],
-      ["uthando","umuzwa wokuthanda","love","u·tha·ndo","values"],
-      ["ukuthula","ukungabi nempi","peace","u·ku·thu·la","values"],
-      ["iqiniso","okuyikho hhayi amanga","truth","i·qi·ni·so","values"],
-      ["umnyango","esingena ngawo endlini","door","u·mnya·ngo","household"],
-      ["itafula","sidlela kulo","table","i·ta·fu·la","household"],
-      ["umbhede","esilala kuwo","bed","u·mbhe·de","household"]
-    ]
-  }
-};
-
-/* ============================================================
-   2. TOKENIZER
-   ============================================================ */
-class Language{
-  constructor(cfg){
-    this.name=cfg.language;this.ignoreCasing=cfg.ignore_casing;
-    this.stripDiacritics=cfg.strip_diacritics;this.preserve=cfg.preserve_marks||[];
-    this.ordered=[...new Set((cfg.atomic_graphemes||[]).map(g=>this.norm(g)))].sort((a,b)=>b.length-a.length);
-  }
-  norm(text){
-    if(this.ignoreCasing)text=text.toLowerCase();
-    if(this.stripDiacritics){
-      const S={};this.preserve.forEach((m,i)=>{S[m]=String.fromCharCode(0xE000+i);});
-      for(const m in S)text=text.split(m).join(S[m]);
-      text=text.normalize("NFD").replace(/\p{Mn}/gu,"").normalize("NFC");
-      for(const m in S)text=text.split(S[m]).join(m);
-    }
-    return text;
-  }
-  tokenize(word){
-    const t=this.norm(word);const out=[];let i=0;
-    while(i<t.length){const g=this.ordered.find(g=>t.startsWith(g,i));if(g){out.push(g);i+=g.length;}else{out.push(t[i]);i++;}}
-    return out;
-  }
-}
-
-/* ============================================================
-   3. GENERATOR — greedy crossing + retry
-   ============================================================ */
-const AC="across",DN="down";
-function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null){
-  const pool=entries.map(e=>({e,t:lang.tokenize(e[0])})).filter(x=>x.t.length&&x.t.length<=maxLen);
-  const sorted=pool.slice().sort((a,b)=>b.t.length-a.t.length);
-  const cands=maxLen<=5?sorted.slice().reverse().slice(0,wordTarget*2):sorted.slice(0,wordTarget*2);
-  const toks=cands.length>=4?cands:pool;
-  toks.sort((a,b)=>b.t.length-a.t.length);
-  const cells=new Map(),placements=[];
-  const K=(r,c)=>r+","+c;
-  function canPlace(tok,row,col,dir){
-    let x=0;const[dr,dc]=dir===AC?[0,1]:[1,0];
-    if(cells.has(K(row-dr,col-dc)))return -1;
-    if(cells.has(K(row+dr*tok.length,col+dc*tok.length)))return -1;
-    for(let i=0;i<tok.length;i++){
-      const r=row+dr*i,c=col+dc*i,ex=cells.get(K(r,c));
-      if(ex!==undefined){if(ex!==tok[i])return -1;x++;}
-      else{const[a,b]=dir===AC?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];if(cells.has(K(a[0],a[1]))||cells.has(K(b[0],b[1])))return -1;}
-    }
-    return placements.length&&x===0?-1:x;
-  }
-  function commit(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];p.tok.forEach((t,i)=>cells.set(K(p.row+dr*i,p.col+dc*i),t));placements.push(p);}
-  function bestPlace(e,tok){
-    const cds=[];
-    for(const[k,gt]of cells){const[gr,gc]=k.split(",").map(Number);for(let i=0;i<tok.length;i++){if(tok[i]!==gt)continue;for(const dir of[AC,DN]){const row=dir===AC?gr:gr-i,col=dir===AC?gc-i:gc;const sc=canPlace(tok,row,col,dir);if(sc<0)continue;const cr=dir===AC?row:row+(tok.length>>1),cc=dir===AC?col+(tok.length>>1):col;cds.push({sc,cp:-(Math.abs(cr)+Math.abs(cc)),p:{e,tok,row,col,dir}});}}}
-    if(!cds.length)return null;
-    cds.sort((a,b)=>b.sc-a.sc||b.cp-a.cp);return cds[0].p;
-  }
-  commit({e:toks[0].e,tok:toks[0].t,row:0,col:0,dir:AC});
-  let rem=toks.slice(1),progress=true;
-  while(rem.length&&progress){progress=false;const left=[];for(const{e,t}of rem){const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
-  if(placements.length<Math.min(4,wordTarget)&&attempt<6){
-    const reshuffled=seed==null?shuffle(entries):seededShuffle(entries,seed+attempt+1);
-    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed);
-  }
-  const starts=new Map();for(const p of placements){const k=K(p.row,p.col);if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
-  [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;}).forEach((k,i)=>starts.get(k).forEach(p=>p.num=i+1));
-  return{cells,placements};
-}
-
-/* Bounding box + fill metrics for a generated puzzle */
-function bboxOf(cells){
-  const rs=[...cells.keys()].map(k=>+k.split(",")[0]);
-  const cs=[...cells.keys()].map(k=>+k.split(",")[1]);
-  const rows=Math.max(...rs)-Math.min(...rs)+1,cols=Math.max(...cs)-Math.min(...cs)+1;
-  return{rows,cols,area:rows*cols};
-}
-/*
- * OPTION 1 — Dense Pack: run generate() N times and keep the densest, most
- * square, most word-rich layout. Score rewards: more words, higher white-cell
- * fill ratio, and an aspect ratio closer to square (like a real crossword).
- * Deterministic when `seed` is supplied (used by the Daily puzzle).
- */
-function generateBest(entries,lang,wordTarget,maxLen,tries=14,seed=null){
-  let best=null,bestScore=-Infinity;
-  for(let i=0;i<tries;i++){
-    const order=seed==null?shuffle(entries):seededShuffle(entries,seed+i*7919);
-    const sd=seed==null?null:seed+i*7919;
-    const p=generate(order,lang,0,wordTarget,maxLen,sd);
-    if(!p.cells.size)continue;
-    const bb=bboxOf(p.cells);
-    const fill=p.cells.size/Math.max(1,bb.area);          // density: white cells / rectangle
-    const aspect=Math.min(bb.rows,bb.cols)/Math.max(1,Math.max(bb.rows,bb.cols)); // 1 = square
-    const score=p.placements.length + fill*12 + aspect*4; // words, then density, then squareness
-    if(score>bestScore){bestScore=score;best=p;}
-  }
-  return best||generate(entries,lang,0,wordTarget,maxLen,seed);
-}
-
-/* ============================================================
-   4. CONFIG + PROFILE
-   ============================================================ */
-const CFGKEY="mhanga_v1_config",PROFKEY="mhanga_v1_profile";
-const COMPLEXITY_RULES={
-  easy:  {label:"Easy",  maxLen:5, hintBudget:Infinity,autoCheckDefault:true, checkAnytime:true,  desc:"Short words · unlimited hints · autocheck on"},
-  medium:{label:"Medium",maxLen:99,hintBudget:Infinity,autoCheckDefault:false,checkAnytime:true,  desc:"All lengths · unlimited hints · optional autocheck"},
-  hard:  {label:"Hard",  maxLen:99,hintBudget:1,       autoCheckDefault:false,checkAnytime:false, desc:"Longer words · 1 hint · check only when fully filled"}
-};
-const LEVEL_PRESETS={
-  beginner:    {complexity:"easy",  wordTarget:4, timerMode:"off", countdownMins:5, learnMode:true},
-  intermediate:{complexity:"medium",wordTarget:7, timerMode:"up",  countdownMins:5, learnMode:false},
-  advanced:    {complexity:"hard",  wordTarget:12,timerMode:"down",countdownMins:8, learnMode:false}
-};
-const GameConfig={
-  timerMode:"up",countdownMins:5,wordTarget:8,complexity:"medium",learnMode:false,
-  load(){try{const d=JSON.parse(localStorage.getItem(CFGKEY)||"{}");["timerMode","countdownMins","wordTarget","complexity","learnMode"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(CFGKEY,JSON.stringify({timerMode:this.timerMode,countdownMins:this.countdownMins,wordTarget:this.wordTarget,complexity:this.complexity,learnMode:this.learnMode}));}catch(e){}}
-};
-GameConfig.load();
-const Profile={
-  name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],
-  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20)}));}catch(e){}},
-  recordSolve(secs,clean,lang,cx){
-    this.totalSolved++;
-    if(clean){this.streak++;this.cleanSolves++;if(this.bestSecs===null||secs<this.bestSecs)this.bestSecs=secs;}
-    else{this.streak=0;}
-    const d=new Date();this.history.unshift({date:d.toLocaleDateString(),lang,cx,secs,clean});
-    this.save();
-  }
-};
-Profile.load();
-
-/* ============================================================
-   4b. GAME STATE
-   ============================================================ */
-let lang,puzzle,guesses,pencilSet,revealed,bounds,active=null;
-let autochecking=false,pencilMode=false,timerOn=true;
-let timerSec=0,timerInterval=null,cleanSolve=true;
-let hintsUsed=0,learnMastery=new Map(),learnStudyPhase=false;
-let pending="",renderTimer=null;
-let gameOver=false; // set on countdown timeout; prevents a timed-out puzzle being recorded as a solve
-let activeCat="all"; // current category filter
-let dailyMode=false; // playing the daily puzzle
-
-function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
-const CK=(r,c)=>r+","+c;
-
-/* ── Daily puzzle: date-seeded deterministic shuffle ── */
-function dailySeed(){const d=new Date();return d.getFullYear()*10000+( d.getMonth()+1)*100+d.getDate();}
-function seededShuffle(arr,seed){
-  arr=arr.slice();let s=seed;
-  function rng(){s=((s*1664525+1013904223)>>>0);return s/4294967296;}
-  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
-  return arr;
-}
-
-/* ── Category-filtered word list (ordering handled by generateBest) ── */
-function wordsForPuzzle(data,cat){
-  let words=cat==="all"?data.words:data.words.filter(w=>w[4]===cat);
-  if(words.length<4)words=data.words; // ensure enough words to fill a dense grid
-  return words;
-}
-
-/* ============================================================
-   5. NEW PUZZLE
-   ============================================================ */
-function newPuzzle(langName,forceDaily=false){
-  const data=LANGUAGES[langName];
-  lang=new Language(data.config);
-  const rules=COMPLEXITY_RULES[GameConfig.complexity];
-  dailyMode=forceDaily;
-  const words=wordsForPuzzle(data,activeCat);
-  /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
-  const seed=forceDaily?dailySeed():null;
-  puzzle=generateBest(words,lang,GameConfig.wordTarget,rules.maxLen,forceDaily?10:14,seed);
-  /* Guard: empty generation would make bounds Infinity and freeze render() */
-  if(!puzzle||!puzzle.cells.size){setStatus("Couldn't build a puzzle — try a different category or fewer words.","err");return;}
-  /* Set grid bounds from placed cells */
-  const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
-  const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
-  bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
-  guesses=new Map();pencilSet=new Set();revealed=new Set();hintsUsed=0;
-  learnMastery=new Map();learnStudyPhase=GameConfig.learnMode;
-  for(const k of puzzle.cells.keys()){
-    guesses.set(k,"");learnMastery.set(k,0);
-    if(GameConfig.learnMode&&learnStudyPhase)guesses.set(k,puzzle.cells.get(k));
-  }
-  active=null;pending="";cleanSolve=true;gameOver=false;
-  autochecking=rules.autoCheckDefault;
-  document.getElementById("cbAuto").checked=autochecking;
-  document.getElementById("lblAuto").classList.toggle("on",autochecking);
-  timerOn=GameConfig.timerMode!=="off";
-  document.getElementById("timer").classList.toggle("hidden",!timerOn);
-  document.body.classList.toggle("learn-mode",GameConfig.learnMode);
-  document.getElementById("vocabCard").classList.toggle("visible",GameConfig.learnMode);
-  document.getElementById("betaNote").style.display=data.beta?"block":"none";
-  const badge=document.getElementById("cxBadge");
-  badge.textContent=rules.label+(forceDaily?" · 📅 Daily":"");
-  badge.className="cx-badge "+GameConfig.complexity;
-  updateHintBudgetBadge();updateProfile();
-  resetTimer();startTimer();updateProgress();
-  const tag=dailyMode?" · 📅 Daily":(GameConfig.learnMode?(learnStudyPhase?" · 📖 Study":""):"");
-  setStatus(`${puzzle.placements.length} words · ${rules.label}${tag} — select a square`,"info");
-  render();renderClues();renderKeypad();updateClueBar();
-  if(GameConfig.learnMode)updateVocabCard();
-}
-
-/* ── helpers ── */
-function wordKeys(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];return p.tok.map((_,i)=>CK(p.row+dr*i,p.col+dc*i));}
-function numMap(){const m=new Map();for(const p of puzzle.placements){const k=CK(p.row,p.col);if(!m.has(k))m.set(k,p.num);}return m;}
-function wordsAt(k){return puzzle.placements.filter(p=>wordKeys(p).includes(k));}
-function isSolved(p){return wordKeys(p).every(k=>(guesses.get(k)||"")===puzzle.cells.get(k));}
-function allSolved(){return puzzle.placements.every(isSolved);}
-function wordProgress(){let s=0;for(const p of puzzle.placements)if(isSolved(p))s++;return{s,t:puzzle.placements.length};}
-
-/* ============================================================
-   6. RENDER — classic B/W crossword table
-   ============================================================ */
-function render(){
-  const board=document.getElementById("board");
-  const cols=bounds?bounds.cmax-bounds.cmin+1:1,rows=bounds?bounds.rmax-bounds.rmin+1:1;
-  board.style.gridTemplateColumns=`repeat(${cols},var(--csz))`;
-  board.style.gridTemplateRows=`repeat(${rows},var(--csz))`;
-  const nm=numMap(),wk=active?new Set(wordKeys(active.placement)):new Set(),ack=active?wordKeys(active.placement)[active.idx]:null;
-  let html="";
-  for(let r=bounds.rmin;r<=bounds.rmax;r++){
-    for(let c=bounds.cmin;c<=bounds.cmax;c++){
-      const k=CK(r,c);
-      if(!puzzle.cells.has(k)){html+=`<div class="sq blk"></div>`;continue;}
-      const g=guesses.get(k)||"",isCur=k===ack,inWd=!isCur&&wk.has(k),isRev=revealed.has(k);
-      const cl=["sq","live"];
-      if(isCur)cl.push("cur");else if(inWd)cl.push("wd");
-      if(GameConfig.learnMode){if((learnMastery.get(k)||0)>=2&&!isCur&&!inWd)cl.push("mastered");else if(learnStudyPhase&&!isCur)cl.push("study-reveal");}
-      if(pencilSet.has(k)&&g&&!isCur&&!inWd)cl.push("pnc");
-      if(autochecking&&g&&!isRev){if(g===puzzle.cells.get(k)){if(!isCur&&!inWd)cl.push("ok");}else cl.push("bad");}
-      if(isRev&&!isCur&&!inWd)cl.push("rev");
-      const num=nm.get(k);
-      html+=`<div class="${cl.join(" ")}" data-k="${k}" role="gridcell" tabindex="${isCur?0:-1}" aria-label="${num?`${num} `:""}${g||"empty"}">`+(num?`<span class="cn">${num}</span>`:"")+`<span class="lv">${g.toUpperCase()}</span></div>`;
-    }
-  }
-  board.innerHTML=html;
-  /* click handling is delegated once at boot (see board listener) — no per-render rebinding */
-  if(ack){const el=board.querySelector(`[data-k="${ack}"]`);if(el)el.focus({preventScroll:true});}
-}
-
-/* ============================================================
-   7. CLUE BAR + CLUE PANELS
-   ============================================================ */
-function updateClueBar(){
-  if(!active){document.getElementById("cbNum").textContent="—";document.getElementById("cbDir").textContent="";document.getElementById("cbText").textContent="Select a square or clue to start";document.getElementById("cbLen").textContent="";return;}
-  const p=active.placement;
-  document.getElementById("cbNum").textContent=p.num;
-  document.getElementById("cbDir").textContent=p.dir.toUpperCase();
-  document.getElementById("cbText").textContent=p.e[1];
-  document.getElementById("cbLen").textContent=`(${p.tok.length})`;
-}
-function renderClues(){
-  const mk=(dir,elId)=>{
-    const items=puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.num-b.num);
-    document.getElementById(elId).innerHTML=items.map(p=>
-      `<div class="ci${isSolved(p)?" done":""}" data-n="${p.num}" data-d="${p.dir}" role="listitem" tabindex="0">`+
-      `<span class="cn2">${p.num}</span><span>${p.e[1]}<div class="en-clue">${p.e[2]||""}</div><span class="cl"> (${p.tok.length})</span></span></div>`
-    ).join("");
-  };
-  mk(AC,"acrossClues");mk(DN,"downClues");
-  document.querySelectorAll(".ci").forEach(el=>{
-    const h=()=>{const p=puzzle.placements.find(x=>x.num==el.dataset.n&&x.dir===el.dataset.d);if(!p)return;active={placement:p,idx:0};pending="";render();syncClues();updateClueBar();el.scrollIntoView({block:"center",behavior:"smooth"});const fk=wordKeys(p)[0];const cel=document.querySelector(`[data-k="${fk}"]`);if(cel)cel.scrollIntoView({block:"nearest",behavior:"smooth"});if(GameConfig.learnMode)updateVocabCard();};
-    el.addEventListener("click",h);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")h();});
-  });
-}
-function syncClues(){
-  document.querySelectorAll(".ci").forEach(el=>{const p=puzzle.placements.find(x=>x.num==el.dataset.n&&x.dir===el.dataset.d);el.classList.toggle("act",!!(active&&p===active.placement));el.classList.toggle("done",!!p&&isSolved(p));});
-  if(active){const el=document.querySelector(`.ci[data-n="${active.placement.num}"][data-d="${active.placement.dir}"]`);if(el)el.scrollIntoView({block:"nearest",behavior:"smooth"});}
-}
-function updateProgress(){const{s,t}=wordProgress();document.getElementById("progressFill").style.width=(t?Math.round(s/t*100):0)+"%";}
-function updateHintBudgetBadge(){const r=COMPLEXITY_RULES[GameConfig.complexity],el=document.getElementById("hintBudgetBadge");if(r.hintBudget===Infinity){el.textContent="";return;}const left=Math.max(0,r.hintBudget-hintsUsed);el.textContent=`${left} hint${left!==1?"s":""} left`;}
-
-/* ============================================================
-   8. INPUT
-   ============================================================ */
-function onCellClick(k){
-  const through=wordsAt(k);if(!through.length)return;
-  let chosen=through[0];
-  if(active&&through.length>1&&wordKeys(active.placement).includes(k)){chosen=through.find(p=>p!==active.placement)||through[0];}
-  else if(active&&through.includes(active.placement)){chosen=active.placement;}
-  const idx=wordKeys(chosen).indexOf(k);
-  active={placement:chosen,idx};pending="";
-  render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();
-}
-function advance(n=1){if(!active)return;const len=wordKeys(active.placement).length;active.idx=Math.max(0,Math.min(active.idx+n,len-1));}
-function advanceSmart(n=1){if(!active)return;const keys=wordKeys(active.placement);let idx=active.idx+n;while(n>0&&idx<keys.length&&(guesses.get(keys[idx])||""))idx+=n;active.idx=Math.max(0,Math.min(idx,keys.length-1));}
-function backspace(){if(!active)return;pending="";const keys=wordKeys(active.placement);if((guesses.get(keys[active.idx])||"")===""&&active.idx>0)active.idx--;const k=keys[active.idx];guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);schedRender();}
-function commitGrapheme(g,k){guesses.set(k,g);if(pencilMode)pencilSet.add(k);else pencilSet.delete(k);}
-function typeGrapheme(g){if(!active)return;pending="";const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;commitGrapheme(g,keys[active.idx]);advance(1);schedRender();}
-function composeKey(k){
-  if(!active)return;const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;
-  const cur=keys[active.idx],cand=pending+k;
-  const isG=lang.ordered.includes(cand),canGrow=lang.ordered.some(g=>g.length>cand.length&&g.startsWith(cand));
-  if(canGrow){pending=cand;guesses.set(cur,cand);render();syncClues();return;}
-  if(isG){commitGrapheme(cand,cur);pending="";advance(1);schedRender();return;}
-  if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
-  commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
-}
-function schedRender(){
-  if(renderTimer)clearTimeout(renderTimer);
-  renderTimer=setTimeout(()=>{renderTimer=null;const prog=wordProgress();setStatus(`${prog.s}/${prog.t} words complete`);updateProgress();if(active)trackLearnMastery(active.placement);if(allSolved())onWin();else{render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();}},60);
-}
-
-/* ============================================================
-   9. CHECK + HINT
-   ============================================================ */
-function checkManual(){
-  const rules=COMPLEXITY_RULES[GameConfig.complexity];let wrong=0,filled=0;const total=guesses.size;
-  for(const[k,v]of guesses){if(v){filled++;if(v!==puzzle.cells.get(k))wrong++;}}
-  if(!filled){setStatus("Nothing filled yet.");return;}
-  if(!rules.checkAnytime&&filled<total){setStatus(`Hard mode: fill all ${total} cells before checking.`,"err");return;}
-  if(wrong)setStatus(`${wrong} error${wrong>1?"s":""} — keep going.`,"err");
-  else setStatus("All filled cells correct ✓","info");
-  render();
-  /* Flash wrong cells red for 1.2s even when autocheck is off (users expect Check to mark errors) */
-  if(wrong&&!autochecking){
-    document.querySelectorAll("#board .sq.live").forEach(el=>{
-      const v=guesses.get(el.dataset.k);
-      if(v&&v!==puzzle.cells.get(el.dataset.k))el.classList.add("bad");
-    });
-    setTimeout(()=>{if(!autochecking)document.querySelectorAll("#board .sq.live.bad").forEach(el=>el.classList.remove("bad"));},1200);
-  }
-}
-function hintAllowed(){const r=COMPLEXITY_RULES[GameConfig.complexity];if(hintsUsed>=r.hintBudget){setStatus(`No hints left on ${r.label} difficulty.`,"err");return false;}return true;}
-function revealLetter(){if(!active){setStatus("Select a cell.");return;}if(!hintAllowed())return;const k=wordKeys(active.placement)[active.idx];guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);hintsUsed++;cleanSolve=false;updateHintBudgetBadge();advance(1);schedRender();}
-function revealWord(){if(!active){setStatus("Select a word.");return;}if(!hintAllowed())return;wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();}
-function revealPuzzle(){for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();setStatus("Puzzle revealed.");}
-
-/* ============================================================
-   10. WIN
-   ============================================================ */
-function onWin(){
-  if(gameOver){render();syncClues();return;} // timed-out: puzzle revealed, not a real solve — don't record
-  stopTimer();updateProgress();
-  const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
-  Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity);updateProfile();
-  if(cleanSolve){setStatus(`🌟 Wakunda! Clean solve in ${m}:${s} · Streak: ${Profile.streak}`,"win");}
-  else{setStatus(`✅ Completed in ${m}:${s}`);}
-  autochecking=false;document.getElementById("cbAuto").checked=false;document.getElementById("lblAuto").classList.remove("on");
-  render();syncClues();
-}
-
-/* ============================================================
-   11. TIMER
-   ============================================================ */
-function resetTimer(){timerSec=GameConfig.timerMode==="down"?GameConfig.countdownMins*60:0;stopTimer();tick();document.getElementById("timer").classList.remove("warn","danger");}
-function startTimer(){if(!timerOn||GameConfig.timerMode==="off")return;timerInterval=setInterval(()=>{if(GameConfig.timerMode==="down"){timerSec--;if(timerSec<=0){timerSec=0;tick();stopTimer();gameOver=true;revealPuzzle();setStatus("⏰ Time's up — puzzle revealed.","err");return;}}else timerSec++;tick();},1000);}
-function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
-function tick(){
-  const el=document.getElementById("timer");
-  if(GameConfig.timerMode==="off"){el.textContent="";return;}
-  const v=timerSec,m=String(Math.floor(v/60)).padStart(2,"0"),s=String(v%60).padStart(2,"0");
-  el.textContent=`${m}:${s}`;
-  if(GameConfig.timerMode==="down"){const lim=GameConfig.countdownMins*60;el.classList.toggle("warn",v<=lim*.25&&v>lim*.1);el.classList.toggle("danger",v<=lim*.1);}
-}
-
-/* ============================================================
-   12. KEYPAD
-   ============================================================ */
-function renderKeypad(){
-  const vowels=["a","e","i","o","u"],cons="bdfghjklmnprstvwyz".split(""),digs=[...lang.ordered].sort();
-  const kp=document.getElementById("keypad");
-  const mk=(lbl,cls="")=>`<button class="${cls}" data-g="${lbl}" aria-label="${lbl}">${lbl.toUpperCase()}</button>`;
-  kp.innerHTML=vowels.map(v=>mk(v)).join("")+cons.map(c=>mk(c)).join("")+digs.map(d=>mk(d,"kdi")).join("")+mk("⌫","kutil")+mk("→","kutil");
-  kp.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{const g=b.dataset.g;if(g==="⌫")backspace();else if(g==="→"){pending="";advance(1);render();syncClues();}else typeGrapheme(g.toLowerCase());}));
-}
-
-/* ============================================================
-   13. LEARN MODE
-   ============================================================ */
-function updateVocabCard(){
-  if(!GameConfig.learnMode||!active)return;
-  const p=active.placement,wd=p.e;
-  document.getElementById("vcWord").textContent=wd[0].toUpperCase();
-  document.getElementById("vcPhonetic").textContent=wd[3]?`/${wd[3]}/`:"";
-  document.getElementById("vcEn").textContent=wd[2]||"";
-  document.getElementById("vcNative").textContent=wd[1];
-  const keys=wordKeys(p),correct=keys.filter(k=>learnMastery.get(k)>0).length,pct=Math.round(correct/keys.length*100);
-  document.getElementById("vcDots").innerHTML=[33,66,100].map(m=>`<div class="vc-dot${pct>=m?" lit":""}"></div>`).join("");
-  document.getElementById("vcStageLabel").textContent=pct===100?"✅ Mastered!":learnStudyPhase?"📖 Study":"✍ Practice";
-  document.getElementById("btnPractice").style.display=learnStudyPhase?"block":"none";
-}
-function enterPracticePhase(){learnStudyPhase=false;for(const k of guesses.keys())guesses.set(k,"");active=null;pending="";setStatus("📚 Practice — fill from memory!","info");render();renderClues();updateClueBar();updateVocabCard();}
-function trackLearnMastery(p){if(!GameConfig.learnMode||learnStudyPhase)return;if(isSolved(p))wordKeys(p).forEach(k=>learnMastery.set(k,(learnMastery.get(k)||0)+1));}
-
-/* ============================================================
-   14. CATEGORY STRIP
-   ============================================================ */
-const CATEGORIES=[["all","All"],["family","👨‍👩‍👧 Family"],["animals","🦁 Animals"],["food","🍲 Food"],["nature","🌿 Nature"],["places","🏠 Places"],["body","👁 Body"],["time","⏰ Time"],["values","❤ Values"],["household","🏡 Household"],["numbers","🔢 Numbers"]];
-function renderCatStrip(){
-  const strip=document.getElementById("catStrip");
-  strip.innerHTML=CATEGORIES.map(([id,label])=>`<button class="cat-chip${activeCat===id?" active":""}" data-cat="${id}">${label}</button>`).join("");
-  strip.querySelectorAll(".cat-chip").forEach(b=>b.addEventListener("click",()=>{activeCat=b.dataset.cat;renderCatStrip();newPuzzle(document.getElementById("lang").value);}));
-}
-
-/* ============================================================
-   15. PROFILE
-   ============================================================ */
-function updateProfile(){
-  document.getElementById("pcName").textContent=Profile.name||"Player";
-  document.getElementById("pcStreak").textContent=Profile.streak>0?`🔥${Profile.streak}`:"";
-  if(document.getElementById("profileModal").classList.contains("open"))openProfile();
-}
-function openProfile(){
-  document.getElementById("psSolved").textContent=Profile.totalSolved;
-  document.getElementById("psStreak").textContent=Profile.streak;
-  const bs=Profile.bestSecs;document.getElementById("psBest").textContent=bs?`${String(Math.floor(bs/60)).padStart(2,"0")}:${String(bs%60).padStart(2,"0")}`:"—";
-  document.getElementById("psClean").textContent=Profile.cleanSolves;
-  document.getElementById("playerNameInput").value=Profile.name||"";
-  const hl=document.getElementById("historyList");
-  hl.innerHTML=Profile.history.slice(0,10).map(h=>`<div class="history-item">${h.date} · ${h.lang} · ${h.cx} · ${h.clean?"⭐ clean":""} ${String(Math.floor(h.secs/60)).padStart(2,"0")}:${String(h.secs%60).padStart(2,"0")}</div>`).join("")||`<div style="color:var(--dim);font-size:.78rem;">No solved puzzles yet.</div>`;
-  document.getElementById("profileModal").classList.add("open");
-}
-
-/* ============================================================
-   16. PRINT MODE
-   ============================================================ */
-function printPuzzle(){
-  const lang=document.getElementById("lang").value;
-  document.getElementById("printTitle").textContent=`Mhanga — ${lang} Crossword`;
-  // Build print clue list
-  const across=puzzle.placements.filter(p=>p.dir===AC).sort((a,b)=>a.num-b.num);
-  const down=puzzle.placements.filter(p=>p.dir===DN).sort((a,b)=>a.num-b.num);
-  document.getElementById("printClues").innerHTML=
-    `<b>ACROSS</b><br>${across.map(p=>`${p.num}. ${p.e[1]} (${p.tok.length})`).join("<br>")}<br><br><b>DOWN</b><br>${down.map(p=>`${p.num}. ${p.e[1]} (${p.tok.length})`).join("<br>")}`;
-  window.print();
-}
-
-/* ============================================================
-   17. SETTINGS + PWA
-   ============================================================ */
-const HINT_DESCS={easy:"Easy: words ≤5 graphemes · unlimited hints · autocheck on",medium:"Medium: all lengths · unlimited hints · optional autocheck",hard:"Hard: longer words · 1 hint · full-fill before check"};
-function openSettings(){
-  document.querySelector(`input[name=timerMode][value="${GameConfig.timerMode}"]`).checked=true;
-  document.getElementById("countdownMins").value=GameConfig.countdownMins;
-  document.getElementById("countdownRow").style.display=GameConfig.timerMode==="down"?"flex":"none";
-  document.getElementById("wordCountSlider").value=GameConfig.wordTarget;
-  document.getElementById("wordCountVal").textContent=GameConfig.wordTarget;
-  document.querySelector(`input[name=complexity][value="${GameConfig.complexity}"]`).checked=true;
-  document.getElementById("cbLearnMode").checked=GameConfig.learnMode;
-  document.getElementById("sdHintDesc").textContent=GameConfig.learnMode?"Learn mode on":HINT_DESCS[GameConfig.complexity];
-  document.getElementById("settingsDrawer").classList.add("open");
-  document.getElementById("sdBackdrop").classList.add("open");
-}
-function closeSettings(){document.getElementById("settingsDrawer").classList.remove("open");document.getElementById("sdBackdrop").classList.remove("open");}
-function readSettingsUI(){
-  GameConfig.timerMode=document.querySelector("input[name=timerMode]:checked")?.value||"up";
-  GameConfig.countdownMins=Math.max(1,Math.min(60,parseInt(document.getElementById("countdownMins").value)||5));
-  GameConfig.wordTarget=parseInt(document.getElementById("wordCountSlider").value)||8;
-  GameConfig.complexity=document.querySelector("input[name=complexity]:checked")?.value||"medium";
-  GameConfig.learnMode=document.getElementById("cbLearnMode").checked;
-  GameConfig.save();
-}
-function setStatus(msg,cls=""){const el=document.getElementById("statusMsg");el.textContent=msg;el.className="status-msg"+(cls?" "+cls:"");}
-
-/* ============================================================
-   18. WIRING
-   ============================================================ */
-document.getElementById("btnNew").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value));
-document.getElementById("btnDaily").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value,true));
-document.getElementById("btnClear").addEventListener("click",()=>{for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);}pending="";cleanSolve=true;resetTimer();startTimer();updateProgress();render();syncClues();setStatus("Cleared.","info");});
-document.getElementById("btnCheck").addEventListener("click",checkManual);
-document.getElementById("btnPrint").addEventListener("click",printPuzzle);
-document.getElementById("cbAuto").addEventListener("change",function(){autochecking=this.checked;document.getElementById("lblAuto").classList.toggle("on",this.checked);render();});
-document.getElementById("cbPencil").addEventListener("change",function(){pencilMode=this.checked;document.getElementById("lblPencil").classList.toggle("on",this.checked);document.body.classList.toggle("pencil-mode",this.checked);});
-document.getElementById("cbTimer").addEventListener("change",function(){timerOn=this.checked;document.getElementById("timer").classList.toggle("hidden",!this.checked);if(this.checked&&!timerInterval)startTimer();if(!this.checked)stopTimer();document.getElementById("lblTimer").classList.toggle("on",this.checked);});
-/* Hint modal */
-document.getElementById("btnHint").addEventListener("click",()=>document.getElementById("hintModal").classList.add("open"));
-document.getElementById("hintCancel").addEventListener("click",()=>document.getElementById("hintModal").classList.remove("open"));
-document.getElementById("hintModal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
-document.getElementById("hintLetter").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealLetter();});
-document.getElementById("hintWord").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealWord();});
-document.getElementById("hintPuzzle").addEventListener("click",()=>{document.getElementById("hintModal").classList.remove("open");revealPuzzle();});
-/* Profile */
-document.getElementById("btnProfile").addEventListener("click",openProfile);
-document.getElementById("profileClose").addEventListener("click",()=>document.getElementById("profileModal").classList.remove("open"));
-document.getElementById("profileModal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
-document.getElementById("saveNameBtn").addEventListener("click",()=>{const n=document.getElementById("playerNameInput").value.trim();if(n){Profile.name=n;Profile.save();updateProfile();document.getElementById("playerNameInput").value=n;}});
-/* Settings */
-document.getElementById("btnSettings").addEventListener("click",openSettings);
-document.getElementById("sdClose").addEventListener("click",closeSettings);
-document.getElementById("sdBackdrop").addEventListener("click",closeSettings);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();if(overflowMenu.classList.contains("open"))closeMore();}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
-document.querySelectorAll("input[name=timerMode]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("countdownRow").style.display=r.value==="down"?"flex":"none";}));
-document.getElementById("wordCountSlider").addEventListener("input",function(){document.getElementById("wordCountVal").textContent=this.value;});
-document.querySelectorAll("input[name=complexity]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("sdHintDesc").textContent=HINT_DESCS[r.value]||"";}));
-document.getElementById("cbLearnMode").addEventListener("change",function(){document.getElementById("sdHintDesc").textContent=this.checked?"Learn mode on":HINT_DESCS[document.querySelector("input[name=complexity]:checked")?.value||"medium"];});
-document.getElementById("sdApply").addEventListener("click",()=>{readSettingsUI();closeSettings();newPuzzle(document.getElementById("lang").value);});
-function applyPreset(name){
-  Object.assign(GameConfig,LEVEL_PRESETS[name]);GameConfig.save();
-  /* Sync ALL DOM inputs so "Apply & New Puzzle" reads correct values if clicked afterwards */
-  const r=document.querySelector(`input[name=timerMode][value="${GameConfig.timerMode}"]`);if(r)r.checked=true;
-  document.getElementById("countdownRow").style.display=GameConfig.timerMode==="down"?"flex":"none";
-  document.getElementById("wordCountSlider").value=GameConfig.wordTarget;
-  document.getElementById("wordCountVal").textContent=GameConfig.wordTarget;
-  const c=document.querySelector(`input[name=complexity][value="${GameConfig.complexity}"]`);if(c)c.checked=true;
-  document.getElementById("cbLearnMode").checked=GameConfig.learnMode;
-  document.getElementById("sdHintDesc").textContent=GameConfig.learnMode?"Learn mode on":HINT_DESCS[GameConfig.complexity];
-  closeSettings();newPuzzle(document.getElementById("lang").value);
-}
-document.getElementById("lpBeginner").addEventListener("click",()=>applyPreset("beginner"));
-document.getElementById("lpIntermediate").addEventListener("click",()=>applyPreset("intermediate"));
-document.getElementById("lpAdvanced").addEventListener("click",()=>applyPreset("advanced"));
-document.getElementById("btnPractice").addEventListener("click",enterPracticePhase);
-/* Overflow "More" menu (toolbar declutter) */
-const overflowMenu=document.getElementById("overflowMenu"),btnMore=document.getElementById("btnMore");
-function openMore(){overflowMenu.classList.add("open");btnMore.setAttribute("aria-expanded","true");}
-function closeMore(){overflowMenu.classList.remove("open");btnMore.setAttribute("aria-expanded","false");}
-btnMore.addEventListener("click",e=>{e.stopPropagation();overflowMenu.classList.contains("open")?closeMore():openMore();});
-/* Action buttons in the menu close it; toggles (labels) keep it open so state change is visible */
-overflowMenu.addEventListener("click",e=>{if(e.target.closest("button"))closeMore();});
-/* Click outside closes the menu */
-document.addEventListener("click",e=>{if(!e.target.closest(".overflow-wrap")&&overflowMenu.classList.contains("open"))closeMore();});
-/* Onboarding / How-to-play */
-const ONBOARD_KEY="mhanga_v1_onboarded";
-function openOnboard(){document.getElementById("onboardModal").classList.add("open");}
-function closeOnboard(){document.getElementById("onboardModal").classList.remove("open");try{localStorage.setItem(ONBOARD_KEY,"1");}catch(e){}}
-document.getElementById("btnHelp").addEventListener("click",openOnboard);
-document.getElementById("obStart").addEventListener("click",closeOnboard);
-document.getElementById("onboardModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeOnboard();});
-/* Keyboard navigation */
-document.addEventListener("keydown",e=>{
-  if(e.target.tagName==="INPUT")return;
-  if(!active)return;
-  if(e.key==="Backspace"){e.preventDefault();backspace();return;}
-  if(e.key==="Tab"){e.preventDefault();pending="";advance(1);render();syncClues();return;}
-  if(e.key===" "){e.preventDefault();pending="";const k=wordKeys(active.placement)[active.idx];const thru=wordsAt(k);if(thru.length>1){const oth=thru.find(p=>p!==active.placement);if(oth){active={placement:oth,idx:wordKeys(oth).indexOf(k)};}}render();syncClues();updateClueBar();return;}
-  if(e.key==="ArrowRight"||e.key==="ArrowDown"){pending="";advanceSmart(1);render();syncClues();return;}
-  if(e.key==="ArrowLeft"||e.key==="ArrowUp"){pending="";active.idx=Math.max(0,active.idx-1);render();syncClues();return;}
-  if(/^[a-zA-Z']$/.test(e.key))composeKey(e.key.toLowerCase());
-});
-/* Language selector */
-const sel=document.getElementById("lang");
-Object.keys(LANGUAGES).forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=LANGUAGES[n].beta?n+" (Beta)":n;sel.appendChild(o);});
-sel.addEventListener("change",()=>newPuzzle(sel.value));
-/* PWA service worker */
-if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(()=>{});}
-/* Boot */
-/* Delegated board click listener — bound once, survives every re-render */
-document.getElementById("board").addEventListener("click",e=>{const el=e.target.closest(".live");if(el&&!gameOver)onCellClick(el.dataset.k);});
-renderCatStrip();updateProfile();newPuzzle("Shona");
-/* First-run: show onboarding once (the digraph rule is the core thing to teach) */
-try{if(!localStorage.getItem(ONBOARD_KEY))openOnboard();}catch(e){}
-</script>
 </body>
 </html>
