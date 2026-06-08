@@ -96,6 +96,20 @@ h1{
 .toolbar .sep{width:1px;height:22px;background:var(--border2);align-self:center;}
 label.toggle input{display:none;}
 label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(52,211,153,.08);}
+/* ── overflow "More" menu (toolbar declutter) ── */
+.overflow-wrap{position:relative;}
+#btnMore[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);}
+.overflow-menu{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:160;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
+  box-shadow:var(--shadow);padding:6px;min-width:190px;
+  display:none;flex-direction:column;gap:4px;
+}
+.overflow-menu.open{display:flex;}
+.overflow-menu button,.overflow-menu label.toggle{
+  width:100%;justify-content:flex-start;text-align:left;border-radius:8px;font-size:.84rem;
+}
+.ov-sep{height:1px;background:var(--border2);margin:3px 2px;}
 
 /* ── category strip ── */
 .cat-strip{
@@ -362,31 +376,35 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
       </button>
     </div>
   </div>
+  <!-- Primary actions in the row; secondary tools live in the ⋯ More menu (decluttered) -->
   <div class="toolbar" role="toolbar" aria-label="Puzzle controls">
     <select id="lang" aria-label="Language"></select>
     <button id="btnNew" class="primary">New Puzzle</button>
-    <button id="btnDaily" title="Play today's shared puzzle — same for everyone">📅 Daily</button>
-    <div class="sep"></div>
     <button id="btnCheck">Check</button>
-    <label class="toggle" id="lblAuto" title="Real-time error highlighting">
-      <input type="checkbox" id="cbAuto" aria-label="Autocheck"/>
-      <span>Autocheck</span>
-    </label>
     <button id="btnHint">Hint ▾</button>
-    <div class="sep"></div>
-    <label class="toggle" id="lblPencil" title="Pencil mode">
+    <label class="toggle" id="lblPencil" title="Pencil mode — mark uncertain letters">
       <input type="checkbox" id="cbPencil"/>
-      <span>✏</span>
+      <span>✏ Pencil</span>
     </label>
-    <label class="toggle" id="lblTimer" title="Timer">
-      <input type="checkbox" id="cbTimer" checked/>
-      <span>⏱</span>
-    </label>
-    <button id="btnPrint" title="Print blank crossword">🖨</button>
-    <button id="btnClear" class="danger">Clear</button>
-    <div class="sep"></div>
-    <button id="btnSettings">⚙ Settings</button>
-    <button id="btnHelp" title="How to play">? Help</button>
+    <div class="overflow-wrap">
+      <button id="btnMore" aria-haspopup="true" aria-expanded="false" title="More tools">⋯ More</button>
+      <div class="overflow-menu" id="overflowMenu" role="menu" aria-label="More tools">
+        <button id="btnDaily" role="menuitem" title="Today's shared puzzle — same for everyone">📅 Daily puzzle</button>
+        <label class="toggle" id="lblAuto" title="Real-time error highlighting" role="menuitemcheckbox">
+          <input type="checkbox" id="cbAuto" aria-label="Autocheck"/>
+          <span>✓ Autocheck</span>
+        </label>
+        <label class="toggle" id="lblTimer" title="Show/hide timer" role="menuitemcheckbox">
+          <input type="checkbox" id="cbTimer" checked/>
+          <span>⏱ Timer</span>
+        </label>
+        <button id="btnPrint" role="menuitem" title="Print blank crossword">🖨 Print</button>
+        <button id="btnClear" class="danger" role="menuitem">🧹 Clear</button>
+        <div class="ov-sep"></div>
+        <button id="btnSettings" role="menuitem">⚙ Settings</button>
+        <button id="btnHelp" role="menuitem" title="How to play">? Help</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1541,7 +1559,7 @@ document.getElementById("saveNameBtn").addEventListener("click",()=>{const n=doc
 document.getElementById("btnSettings").addEventListener("click",openSettings);
 document.getElementById("sdClose").addEventListener("click",closeSettings);
 document.getElementById("sdBackdrop").addEventListener("click",closeSettings);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();if(overflowMenu.classList.contains("open"))closeMore();}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
 document.querySelectorAll("input[name=timerMode]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("countdownRow").style.display=r.value==="down"?"flex":"none";}));
 document.getElementById("wordCountSlider").addEventListener("input",function(){document.getElementById("wordCountVal").textContent=this.value;});
 document.querySelectorAll("input[name=complexity]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("sdHintDesc").textContent=HINT_DESCS[r.value]||"";}));
@@ -1563,6 +1581,15 @@ document.getElementById("lpBeginner").addEventListener("click",()=>applyPreset("
 document.getElementById("lpIntermediate").addEventListener("click",()=>applyPreset("intermediate"));
 document.getElementById("lpAdvanced").addEventListener("click",()=>applyPreset("advanced"));
 document.getElementById("btnPractice").addEventListener("click",enterPracticePhase);
+/* Overflow "More" menu (toolbar declutter) */
+const overflowMenu=document.getElementById("overflowMenu"),btnMore=document.getElementById("btnMore");
+function openMore(){overflowMenu.classList.add("open");btnMore.setAttribute("aria-expanded","true");}
+function closeMore(){overflowMenu.classList.remove("open");btnMore.setAttribute("aria-expanded","false");}
+btnMore.addEventListener("click",e=>{e.stopPropagation();overflowMenu.classList.contains("open")?closeMore():openMore();});
+/* Action buttons in the menu close it; toggles (labels) keep it open so state change is visible */
+overflowMenu.addEventListener("click",e=>{if(e.target.closest("button"))closeMore();});
+/* Click outside closes the menu */
+document.addEventListener("click",e=>{if(!e.target.closest(".overflow-wrap")&&overflowMenu.classList.contains("open"))closeMore();});
 /* Onboarding / How-to-play */
 const ONBOARD_KEY="mhanga_v1_onboarded";
 function openOnboard(){document.getElementById("onboardModal").classList.add("open");}
