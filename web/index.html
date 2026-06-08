@@ -242,6 +242,26 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px 26px;max-width:360px;width:92%;box-shadow:var(--shadow);}
+/* ── onboarding card (first-run + Help) ── */
+.modal.onboard{max-width:440px;max-height:88vh;overflow-y:auto;}
+.ob-title{font-size:1.25rem;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.ob-sub{color:var(--muted);font-size:.86rem;margin-bottom:18px;line-height:1.45;}
+.ob-step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;}
+.ob-icon{font-size:1.3rem;line-height:1;flex-shrink:0;width:30px;text-align:center;}
+.ob-step h4{font-size:.92rem;font-weight:700;margin-bottom:3px;}
+.ob-step p{color:var(--muted);font-size:.82rem;line-height:1.5;margin:0;}
+.ob-step b{color:var(--ink);}
+/* mini demo grid — shows a digraph filling one cell */
+.ob-demo{display:flex;gap:3px;margin:8px 0 2px;justify-content:flex-start;}
+.ob-demo .dc{background:#fff;color:#111;font-weight:800;font-size:.85rem;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:2px;text-transform:uppercase;}
+.ob-demo .dc.di{background:var(--cw-yellow);}
+.ob-caption{font-size:.74rem;color:var(--dim);margin-top:2px;}
+.ob-start{margin-top:8px;width:100%;font:inherit;cursor:pointer;font-weight:700;font-size:.92rem;
+  background:linear-gradient(135deg,rgba(52,211,153,.25),rgba(129,140,248,.25));
+  border:1px solid var(--accent);color:var(--ink);padding:12px;border-radius:11px;transition:filter .15s;}
+.ob-start:hover{filter:brightness(1.15);}
 .modal h3{font-size:1rem;margin-bottom:6px;font-weight:700;}
 .modal p{color:var(--muted);font-size:.84rem;margin-bottom:16px;line-height:1.5;}
 .btn-row{display:flex;flex-direction:column;gap:8px;}
@@ -366,6 +386,7 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
     <button id="btnClear" class="danger">Clear</button>
     <div class="sep"></div>
     <button id="btnSettings">⚙ Settings</button>
+    <button id="btnHelp" title="How to play">? Help</button>
   </div>
 </header>
 
@@ -427,6 +448,52 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(5
   <div class="side" role="complementary" aria-label="Clues">
     <div class="clue-panel"><h2>Across</h2><div id="acrossClues" role="list"></div></div>
     <div class="clue-panel"><h2>Down</h2><div id="downClues" role="list"></div></div>
+  </div>
+</div>
+
+<!-- Onboarding / How-to-play modal -->
+<div class="modal-overlay" id="onboardModal" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+  <div class="modal onboard">
+    <div class="ob-title" id="obTitle">Welcome to Mhanga 🎉</div>
+    <div class="ob-sub">The first crossword built for Bantu languages — Shona, Swahili &amp; Zulu.</div>
+
+    <div class="ob-step">
+      <div class="ob-icon">🔤</div>
+      <div>
+        <h4>One square = one sound</h4>
+        <p>Letter-pairs like <b>ng'</b>, <b>zv</b>, <b>ch</b>, <b>dl</b> fill a <b>single</b> cell — not two. That's what makes a Bantu crossword work.</p>
+        <div class="ob-demo">
+          <div class="dc di">zv</div><div class="dc">o</div><div class="dc di">mb</div><div class="dc">o</div>
+        </div>
+        <div class="ob-caption">“zvombo” = 4 squares, not 6 letters</div>
+      </div>
+    </div>
+
+    <div class="ob-step">
+      <div class="ob-icon">⌨️</div>
+      <div>
+        <h4>How to fill it in</h4>
+        <p>Tap a clue or square, then type. Type <b>z</b> then <b>v</b> and it joins into <b>zv</b> automatically — or tap the green digraph keys on the keypad below.</p>
+      </div>
+    </div>
+
+    <div class="ob-step">
+      <div class="ob-icon">📚</div>
+      <div>
+        <h4>Learning a language?</h4>
+        <p>Turn on <b>Learn Mode</b> in ⚙ Settings for English meanings and pronunciation — built for the diaspora and curious minds alike.</p>
+      </div>
+    </div>
+
+    <div class="ob-step">
+      <div class="ob-icon">🎯</div>
+      <div>
+        <h4>Make it yours</h4>
+        <p>Pick a <b>category</b> (Animals, Family, Food…), a <b>difficulty</b>, or play the <b>📅 Daily</b> — the same puzzle for everyone each day.</p>
+      </div>
+    </div>
+
+    <button class="ob-start" id="obStart">Start playing →</button>
   </div>
 </div>
 
@@ -1474,7 +1541,7 @@ document.getElementById("saveNameBtn").addEventListener("click",()=>{const n=doc
 document.getElementById("btnSettings").addEventListener("click",openSettings);
 document.getElementById("sdClose").addEventListener("click",closeSettings);
 document.getElementById("sdBackdrop").addEventListener("click",closeSettings);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
 document.querySelectorAll("input[name=timerMode]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("countdownRow").style.display=r.value==="down"?"flex":"none";}));
 document.getElementById("wordCountSlider").addEventListener("input",function(){document.getElementById("wordCountVal").textContent=this.value;});
 document.querySelectorAll("input[name=complexity]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("sdHintDesc").textContent=HINT_DESCS[r.value]||"";}));
@@ -1496,6 +1563,13 @@ document.getElementById("lpBeginner").addEventListener("click",()=>applyPreset("
 document.getElementById("lpIntermediate").addEventListener("click",()=>applyPreset("intermediate"));
 document.getElementById("lpAdvanced").addEventListener("click",()=>applyPreset("advanced"));
 document.getElementById("btnPractice").addEventListener("click",enterPracticePhase);
+/* Onboarding / How-to-play */
+const ONBOARD_KEY="mhanga_v1_onboarded";
+function openOnboard(){document.getElementById("onboardModal").classList.add("open");}
+function closeOnboard(){document.getElementById("onboardModal").classList.remove("open");try{localStorage.setItem(ONBOARD_KEY,"1");}catch(e){}}
+document.getElementById("btnHelp").addEventListener("click",openOnboard);
+document.getElementById("obStart").addEventListener("click",closeOnboard);
+document.getElementById("onboardModal").addEventListener("click",e=>{if(e.target===e.currentTarget)closeOnboard();});
 /* Keyboard navigation */
 document.addEventListener("keydown",e=>{
   if(e.target.tagName==="INPUT")return;
@@ -1517,6 +1591,8 @@ if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").then((
 /* Delegated board click listener — bound once, survives every re-render */
 document.getElementById("board").addEventListener("click",e=>{const el=e.target.closest(".live");if(el&&!gameOver)onCellClick(el.dataset.k);});
 renderCatStrip();updateProfile();newPuzzle("Shona");
+/* First-run: show onboarding once (the digraph rule is the core thing to teach) */
+try{if(!localStorage.getItem(ONBOARD_KEY))openOnboard();}catch(e){}
 </script>
 </body>
 </html>
