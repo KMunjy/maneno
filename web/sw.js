@@ -5,8 +5,10 @@
      - Everything else (manifest, icons, future assets) → CACHE-FIRST with
        background refresh
    Bump CACHE on every release to evict the previous shell. */
-const CACHE = "mhanga-v3";
-const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
+const CACHE = "mhanga-v4";
+// Relative paths so the SW works whether served at domain root (Vercel/Netlify)
+// or under a subpath (GitHub Pages: /payment-reminder/).
+const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -37,7 +39,7 @@ self.addEventListener("fetch", e => {
           caches.open(CACHE).then(c => c.put(e.request, copy));
           return res;
         })
-        .catch(() => caches.match(e.request).then(r => r || caches.match("/index.html")))
+        .catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
     );
     return;
   }

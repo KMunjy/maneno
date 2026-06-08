@@ -2,7 +2,8 @@
   "name": "Mhanga · Bantu Crossword",
   "short_name": "Mhanga",
   "description": "A grapheme-aware crossword and language-learning game for Shona, Swahili and Zulu.",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#111827",
@@ -15,7 +16,7 @@
   ],
   "screenshots": [],
   "share_target": {
-    "action": "/",
+    "action": "./",
     "method": "GET",
     "params": { "title": "title", "text": "text", "url": "url" }
   }
