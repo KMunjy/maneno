@@ -5,8 +5,8 @@
      - Everything else (manifest, icons, future assets) → CACHE-FIRST with
        background refresh
    Bump CACHE on every release to evict the previous shell. */
-const CACHE = "mhanga-v2";
-const SHELL = ["/", "/index.html", "/manifest.json"];
+const CACHE = "mhanga-v3";
+const SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
