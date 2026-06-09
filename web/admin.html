@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maneno · Admin</title>
+<meta name="theme-color" content="#efe9dc"/>
+<style>
+:root{
+  --bg:#efe9dc;--surface:#e4ddcb;--surface2:#dbd2bc;
+  --border:rgba(28,26,23,.12);--border2:rgba(28,26,23,.22);
+  --ink:#1c1a17;--muted:#6b6457;--dim:#8a8170;
+  --accent:#2d4a7c;--accent2:#c2683a;--good:#5c7a3a;--bad:#b5462f;
+  --fontd:"Futura","Century Gothic","Trebuchet MS",ui-sans-serif,system-ui,sans-serif;
+  --fontb:"Gill Sans","Gill Sans MT","Avenir","Segoe UI",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fontb);background:var(--bg);color:var(--ink);}
+.chev{height:10px;background:repeating-linear-gradient(135deg,#2d4a7c 0 14px,#c2683a 14px 28px);}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border2);flex-wrap:wrap;gap:10px;}
+.brand{font-family:var(--fontd);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-size:1.2rem;}
+.brand small{font-family:var(--fontb);letter-spacing:0;text-transform:none;color:var(--muted);font-size:.8rem;margin-left:8px;}
+header a{color:var(--accent);text-decoration:none;font-size:.88rem;font-weight:600;}
+.wrap{max-width:1100px;margin:0 auto;padding:20px;}
+h2{font-family:var(--fontd);font-weight:700;font-size:1rem;letter-spacing:.5px;margin:26px 0 12px;text-transform:uppercase;color:var(--accent);}
+/* dashboard cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;}
+.card .lng{font-family:var(--fontd);font-weight:700;font-size:1.05rem;letter-spacing:.5px;}
+.card .big{font-size:2rem;font-weight:800;margin:4px 0;}
+.card .ok{color:var(--good);font-weight:700;font-size:.82rem;}
+.card .no{color:var(--bad);font-weight:700;font-size:.82rem;}
+.card .cats{font-size:.74rem;color:var(--muted);margin-top:8px;line-height:1.5;}
+/* controls */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+select,input[type=text],input[type=search]{font:inherit;font-size:.88rem;background:#fbf7ef;border:1px solid var(--border2);color:var(--ink);border-radius:9px;padding:8px 12px;}
+select:focus,input:focus{outline:none;border-color:var(--accent);}
+button{font:inherit;cursor:pointer;border-radius:9px;padding:8px 14px;font-size:.85rem;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--ink);transition:border-color .15s,filter .15s;}
+button:hover{border-color:var(--accent);}
+button.primary{background:var(--accent2);color:#fbf7ef;border-color:var(--accent2);}
+button.danger{color:var(--bad);border-color:rgba(181,70,47,.4);}
+button.sm{padding:4px 9px;font-size:.78rem;}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:.85rem;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;}
+th{background:var(--surface2);text-align:left;padding:9px 10px;font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+td{padding:8px 10px;border-top:1px solid var(--border);vertical-align:top;}
+tr:hover td{background:rgba(0,0,0,.02);}
+.tag{font-size:.66rem;font-weight:700;padding:1px 6px;border-radius:10px;text-transform:uppercase;}
+.tag.custom{background:rgba(194,104,58,.18);color:var(--accent2);}
+.tag.base{background:rgba(45,74,124,.12);color:var(--accent);}
+.muted{color:var(--muted);}
+/* form */
+.form{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end;}
+.form label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:4px;}
+.form .full{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;align-items:center;}
+.status{font-size:.85rem;color:var(--good);}
+.arch{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:18px 20px;font-size:.86rem;line-height:1.6;color:var(--muted);}
+.arch pre{background:#fbf7ef;border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;font-size:.78rem;color:var(--ink);margin:10px 0;}
+.arch b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="chev"></div>
+<header>
+  <div class="brand">Maneno <small>Content Admin</small></div>
+  <div><a href="play.html">▸ Open game</a> &nbsp;·&nbsp; <a href="index.html">Home</a></div>
+</header>
+
+<div class="wrap">
+  <h2>Dashboard</h2>
+  <div class="cards" id="cards"></div>
+
+  <h2>Word bank</h2>
+  <div class="controls">
+    <select id="fLang"></select>
+    <select id="fCat"><option value="all">All categories</option></select>
+    <input type="search" id="fSearch" placeholder="Search answer / clue / English…"/>
+    <span class="muted" id="count"></span>
+    <span style="flex:1"></span>
+    <button id="btnExport">⇩ Export</button>
+    <button id="btnImport">⇧ Import</button>
+    <input type="file" id="fileImport" accept="application/json" style="display:none"/>
+  </div>
+
+  <!-- add / edit form -->
+  <div class="form" id="form">
+    <div><label>Answer *</label><input type="text" id="iAns" placeholder="e.g. chikoro"/></div>
+    <div><label>Clue (in language) *</label><input type="text" id="iClue" placeholder="Nzvimbo inodzidzirwa vana"/></div>
+    <div><label>English *</label><input type="text" id="iEn" placeholder="school"/></div>
+    <div><label>Phonetic</label><input type="text" id="iPhon" placeholder="chi·ko·ro"/></div>
+    <div><label>Category</label><select id="iCat"></select></div>
+    <div class="full">
+      <span class="status" id="formStatus"></span>
+      <button id="btnReset">Clear</button>
+      <button class="primary" id="btnSave">Add word</button>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>Answer</th><th>Clue</th><th>English</th><th>Cat</th><th>Src</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <h2 id="hiddenHead" style="display:none">Hidden base words (click to restore)</h2>
+  <div id="hiddenList" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+
+  <h2>Full-stack architecture (target model)</h2>
+  <div class="arch">
+    <p>Maneno ships today as a <b>static client app</b> (zero backend) — fastest to build and free to host. This admin manages content locally via a browser-stored overlay. Here is how it scales to a full stack when accounts &amp; cross-device sync are needed:</p>
+<pre>
+            ┌────────────────────────────────────────────┐
+ CLIENT     │  Maneno PWA  (index / play / register / admin)│
+ (browser)  │  • offline-first service worker              │
+            │  • localStorage: profile, settings, overlay  │
+            └───────────────┬────────────────────────────┘
+                            │ HTTPS / JSON
+            ┌───────────────▼────────────────────────────┐
+ EDGE/API   │  Vercel Functions (Fluid Compute, Node)      │
+            │  /api/words  /api/profile  /api/daily        │
+            │  /api/admin/*  (auth-gated CRUD)             │
+            └───────────────┬────────────────────────────┘
+                            │
+            ┌───────────────▼───────────┐  ┌───────────────┐
+ DATA       │  Postgres (Marketplace)    │  │  Auth         │
+            │  words, users, scores,     │  │  (Sign in w/  │
+            │  daily_seed, audit_log     │  │   Vercel/OAuth│
+            └────────────────────────────┘  └───────────────┘
+</pre>
+    <p><b>Admin (this page) → full stack:</b> today writes a localStorage overlay; in the full model the same screens call <b>/api/admin/words</b> (create/update/hide) writing to Postgres, behind role-based auth. The game reads <b>/api/words</b> (cached at the edge) instead of the bundled <code>words.js</code>. Player profiles & streaks move from localStorage to the <b>users</b> table for cross-device sync. Nothing else in the UI changes — the data source swaps from a file to an API.</p>
+    <p class="muted">Repos: <b>maneno</b> (this) · <b>walletvibe</b> · <b>yourreader</b> — three independent projects.</p>
+  </div>
+</div>
+
+<script src="words.js"></script>
+<script>
+"use strict";
+const OVKEY="maneno_v1_customwords";
+const CATS=["family","animals","food","nature","places","body","time","values","household","numbers"];
+const BASE=window.BASE_LANGUAGES||window.LANGUAGES;
+const LANGS=Object.keys(BASE);
+
+function loadOv(){try{const o=JSON.parse(localStorage.getItem(OVKEY)||"{}");o.words=o.words||{};o.hidden=o.hidden||{};return o;}catch(e){return{words:{},hidden:{}};}}
+function saveOv(o){localStorage.setItem(OVKEY,JSON.stringify(o));}
+let ov=loadOv();
+let editing=null; // answer currently being edited
+
+/* effective list for a language = base, with overrides/adds applied, hidden removed */
+function effective(lang){
+  const hidden=new Set(ov.hidden[lang]||[]);
+  const customByAns={}; (ov.words[lang]||[]).forEach(w=>customByAns[w[0]]=w);
+  const out=[];
+  BASE[lang].words.forEach(w=>{
+    if(hidden.has(w[0]))return;
+    out.push({w:customByAns[w[0]]||w, custom:!!customByAns[w[0]]});
+  });
+  // pure additions (answers not in base)
+  (ov.words[lang]||[]).forEach(w=>{ if(!BASE[lang].words.some(b=>b[0]===w[0])) out.push({w,custom:true}); });
+  return out;
+}
+
+/* ---- dashboard ---- */
+function renderCards(){
+  const el=document.getElementById("cards");
+  el.innerHTML=LANGS.map(l=>{
+    const eff=effective(l), n=eff.length;
+    const cat={}; eff.forEach(r=>cat[r.w[4]]=(cat[r.w[4]]||0)+1);
+    const catStr=CATS.map(c=>`${c}: ${cat[c]||0}`).join(" · ");
+    const beta=BASE[l].config&&BASE[l].config.language==="Zulu";
+    return `<div class="card"><div class="lng">${l}${beta?' <span class="tag custom">BETA</span>':''}</div>
+      <div class="big">${n}</div>
+      <div class="${n>=200?'ok':'no'}">${n>=200?'✓ 200+ — good variance':'△ below 200 ('+(200-n)+' to go)'}</div>
+      <div class="cats">${catStr}</div></div>`;
+  }).join("");
+}
+
+/* ---- table ---- */
+function curLang(){return document.getElementById("fLang").value;}
+function renderRows(){
+  const lang=curLang(), cat=document.getElementById("fCat").value, q=document.getElementById("fSearch").value.trim().toLowerCase();
+  let list=effective(lang);
+  if(cat!=="all")list=list.filter(r=>r.w[4]===cat);
+  if(q)list=list.filter(r=>(r.w[0]+" "+r.w[1]+" "+r.w[2]).toLowerCase().includes(q));
+  document.getElementById("count").textContent=list.length+" shown · "+effective(lang).length+" total";
+  document.getElementById("rows").innerHTML=list.map((r,i)=>`
+    <tr><td class="muted">${i+1}</td>
+      <td><b>${esc(r.w[0])}</b><div class="muted" style="font-size:.72rem">/${esc(r.w[3]||"")}/</div></td>
+      <td>${esc(r.w[1])}</td><td>${esc(r.w[2])}</td><td class="muted">${esc(r.w[4])}</td>
+      <td><span class="tag ${r.custom?'custom':'base'}">${r.custom?'custom':'base'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="sm" data-edit="${esc(r.w[0])}">edit</button>
+        <button class="sm danger" data-del="${esc(r.w[0])}">del</button></td></tr>`).join("")
+    || `<tr><td colspan="7" class="muted" style="padding:18px;text-align:center">No words match.</td></tr>`;
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delWord(b.dataset.del));
+  renderHidden();
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function renderHidden(){
+  const lang=curLang(), hid=ov.hidden[lang]||[];
+  document.getElementById("hiddenHead").style.display=hid.length?"block":"none";
+  document.getElementById("hiddenList").innerHTML=hid.map(a=>`<button class="sm" data-unhide="${esc(a)}">↩ ${esc(a)}</button>`).join("");
+  document.querySelectorAll("[data-unhide]").forEach(b=>b.onclick=()=>{ov.hidden[lang]=hid.filter(x=>x!==b.dataset.unhide);saveOv(ov);refresh();});
+}
+
+/* ---- CRUD ---- */
+function startEdit(ans){
+  const lang=curLang(); const row=effective(lang).find(r=>r.w[0]===ans); if(!row)return;
+  editing=ans;
+  iAns.value=row.w[0];iClue.value=row.w[1];iEn.value=row.w[2];iPhon.value=row.w[3]||"";iCat.value=row.w[4];
+  document.getElementById("btnSave").textContent="Save changes";
+  document.getElementById("formStatus").textContent="Editing “"+ans+"”";
+  window.scrollTo({top:document.getElementById("form").offsetTop-80,behavior:"smooth"});
+}
+function resetForm(){editing=null;iAns.value=iClue.value=iEn.value=iPhon.value="";iCat.value=CATS[0];document.getElementById("btnSave").textContent="Add word";document.getElementById("formStatus").textContent="";}
+function saveWord(){
+  const lang=curLang();
+  const w=[iAns.value.trim(),iClue.value.trim(),iEn.value.trim(),iPhon.value.trim(),iCat.value];
+  if(!w[0]||!w[1]||!w[2]){document.getElementById("formStatus").style.color="var(--bad)";document.getElementById("formStatus").textContent="Answer, clue and English are required.";return;}
+  document.getElementById("formStatus").style.color="var(--good)";
+  ov.words[lang]=ov.words[lang]||[];
+  const i=ov.words[lang].findIndex(x=>x[0]===w[0]);
+  if(i>=0)ov.words[lang][i]=w; else ov.words[lang].push(w);
+  // if editing renamed answer, drop old override
+  if(editing&&editing!==w[0]){ov.words[lang]=ov.words[lang].filter(x=>x[0]!==editing);}
+  saveOv(ov);resetForm();refresh();
+  document.getElementById("formStatus").textContent="Saved ✓ (applies in the game on next load)";
+}
+function delWord(ans){
+  const lang=curLang();
+  const isCustomPure=(ov.words[lang]||[]).some(x=>x[0]===ans)&&!BASE[lang].words.some(b=>b[0]===ans);
+  if(isCustomPure){ ov.words[lang]=ov.words[lang].filter(x=>x[0]!==ans); }
+  else { ov.hidden[lang]=ov.hidden[lang]||[]; if(!ov.hidden[lang].includes(ans))ov.hidden[lang].push(ans);
+         ov.words[lang]=(ov.words[lang]||[]).filter(x=>x[0]!==ans); } // drop any override too
+  saveOv(ov);refresh();
+}
+
+/* ---- import / export ---- */
+document.getElementById("btnExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(ov,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="maneno-content-overlay.json";a.click();
+};
+document.getElementById("btnImport").onclick=()=>document.getElementById("fileImport").click();
+document.getElementById("fileImport").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result);o.words=o.words||{};o.hidden=o.hidden||{};ov=o;saveOv(ov);refresh();alert("Imported.");}catch(_){alert("Invalid JSON.");}};
+  r.readAsText(f);
+};
+
+/* ---- boot ---- */
+function refresh(){renderCards();renderRows();}
+(function init(){
+  const fl=document.getElementById("fLang"); fl.innerHTML=LANGS.map(l=>`<option>${l}</option>`).join("");
+  document.getElementById("fCat").innerHTML='<option value="all">All categories</option>'+CATS.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("iCat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
+  fl.onchange=refresh; document.getElementById("fCat").onchange=renderRows; document.getElementById("fSearch").oninput=renderRows;
+  document.getElementById("btnSave").onclick=saveWord; document.getElementById("btnReset").onclick=resetForm;
+  resetForm(); refresh();
+})();
+</script>
+</body>
+</html>

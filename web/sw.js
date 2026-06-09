@@ -8,7 +8,7 @@
 const CACHE = "maneno-v1";
 // Relative paths so the SW works whether served at domain root (Vercel/Netlify)
 // or under a subpath (GitHub Pages: /payment-reminder/).
-const SHELL = ["./", "./index.html", "./play.html", "./register.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
+const SHELL = ["./", "./index.html", "./play.html", "./register.html", "./manifest.json", "./words.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
