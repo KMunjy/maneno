@@ -369,6 +369,31 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
 @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}80%{transform:translateX(2px);}}
 @keyframes pop{0%{transform:scale(.6);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
 @keyframes rise{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+@keyframes modalin{from{transform:translateY(10px) scale(.98);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
+@keyframes cellpop{0%{transform:scale(1);}45%{transform:scale(1.18);}100%{transform:scale(1);}}
+@keyframes cellflash{0%{background:var(--cw-yellow);}100%{background:var(--cw-white);}}
+@keyframes cellflashW{0%{background:var(--cw-yellow);}100%{background:var(--cw-blue);}}
+
+/* tactile cell feedback (applied post-render, then removed) */
+.sq.live.pop .lv{display:inline-block;animation:cellpop .18s ease;}
+.sq.live.flash{animation:cellflash .55s ease;}
+.sq.live.flash.wd{animation:cellflashW .55s ease;}
+/* smoother highlight + modal entrance */
+.sq.live{transition:background .12s ease;}
+.modal{animation:modalin .22s ease;}
+
+/* ── daily-streak calendar (profile) ── */
+.cal{display:flex;gap:5px;margin:8px 0 4px;flex-wrap:wrap;}
+.cal .d{width:22px;height:22px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--dim);}
+.cal .d.on{background:var(--accent2);border-color:var(--accent2);color:#fbf7ef;font-weight:700;}
+.cal .d.today{outline:2px solid var(--accent);outline-offset:1px;}
+.cal-lbl{font-size:.72rem;color:var(--muted);margin-top:6px;}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .sq.live.pop .lv,.sq.live.flash,.sq.live.flash.wd,.modal,.winmodal,.win-emoji,.sq.live.bad{animation:none!important;}
+}
 
 /* ── toast (achievement unlocked) ── */
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);
@@ -606,6 +631,9 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
     </div>
     <input class="name-input" id="playerNameInput" type="text" maxlength="20" placeholder="Enter your name…" aria-label="Player name"/>
     <button class="save-name" id="saveNameBtn">Save name</button>
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:700;margin-top:14px;">Daily streak</div>
+    <div class="cal" id="calGrid"></div>
+    <div class="cal-lbl" id="calLbl"></div>
     <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:700;margin-top:14px;">Achievements</div>
     <div id="achGrid" class="ach-grid"></div>
     <div id="historyList" style="margin-top:12px;max-height:110px;overflow-y:auto;"></div>
@@ -958,7 +986,7 @@ function newPuzzle(langName,forceDaily=false){
     guesses.set(k,"");learnMastery.set(k,0);
     if(GameConfig.learnMode&&learnStudyPhase)guesses.set(k,puzzle.cells.get(k));
   }
-  active=null;pending="";cleanSolve=true;gameOver=false;_lastSolved=0;
+  active=null;pending="";cleanSolve=true;gameOver=false;_solvedSet=new Set();_lastFilledKey=null;
   autochecking=rules.autoCheckDefault;
   document.getElementById("cbAuto").checked=autochecking;
   document.getElementById("lblAuto").classList.toggle("on",autochecking);
@@ -1063,7 +1091,7 @@ function onCellClick(k){
 function advance(n=1){if(!active)return;const len=wordKeys(active.placement).length;active.idx=Math.max(0,Math.min(active.idx+n,len-1));}
 function advanceSmart(n=1){if(!active)return;const keys=wordKeys(active.placement);let idx=active.idx+n;while(n>0&&idx<keys.length&&(guesses.get(keys[idx])||""))idx+=n;active.idx=Math.max(0,Math.min(idx,keys.length-1));}
 function backspace(){if(!active)return;pending="";const keys=wordKeys(active.placement);if((guesses.get(keys[active.idx])||"")===""&&active.idx>0)active.idx--;const k=keys[active.idx];guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);schedRender();}
-function commitGrapheme(g,k){guesses.set(k,g);if(pencilMode)pencilSet.add(k);else pencilSet.delete(k);}
+function commitGrapheme(g,k){guesses.set(k,g);_lastFilledKey=k;if(pencilMode)pencilSet.add(k);else pencilSet.delete(k);}
 function typeGrapheme(g){if(!active)return;pending="";const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;SFX.tick();commitGrapheme(g,keys[active.idx]);advance(1);schedRender();}
 function composeKey(k){
   if(!active)return;const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;
@@ -1074,13 +1102,32 @@ function composeKey(k){
   if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
   commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
 }
-let _lastSolved=0;
+let _solvedSet=new Set(),_lastFilledKey=null;
+function flashCells(words){
+  words.forEach(p=>wordKeys(p).forEach(k=>{
+    const el=document.querySelector(`#board .sq[data-k="${k}"]`);
+    if(el){el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),560);}
+  }));
+}
+function popCell(k){
+  if(!k)return;const el=document.querySelector(`#board .sq[data-k="${k}"]`);
+  if(el){el.classList.add("pop");setTimeout(()=>el.classList.remove("pop"),200);}
+}
 function schedRender(){
   if(renderTimer)clearTimeout(renderTimer);
-  renderTimer=setTimeout(()=>{renderTimer=null;const prog=wordProgress();
-    if(prog.s>_lastSolved)SFX.word();        // chime when a new word is completed
-    _lastSolved=prog.s;
-    setStatus(`${prog.s}/${prog.t} words complete`);updateProgress();if(active)trackLearnMastery(active.placement);if(allSolved())onWin();else{render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();}},60);
+  renderTimer=setTimeout(()=>{
+    renderTimer=null;
+    const nowSolved=puzzle.placements.filter(isSolved);
+    const newly=nowSolved.filter(p=>!_solvedSet.has(p.num+p.dir));
+    _solvedSet=new Set(nowSolved.map(p=>p.num+p.dir));
+    if(newly.length)SFX.word();              // chime when a new word is completed
+    const prog=wordProgress();
+    setStatus(`${prog.s}/${prog.t} words complete`);updateProgress();
+    if(active)trackLearnMastery(active.placement);
+    if(allSolved()){onWin();return;}
+    render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();
+    flashCells(newly); popCell(_lastFilledKey); _lastFilledKey=null;   // tactile feel, post-render
+  },60);
 }
 
 /* ============================================================
@@ -1243,7 +1290,21 @@ function openProfile(){
     const on=Profile.achievements.indexOf(a.id)>=0;
     return `<div class="ach${on?" on":""}" title="${a.desc}"><div class="ai">${a.icon}</div><div class="al">${a.label}</div></div>`;
   }).join("");
+  renderCalendar();
   document.getElementById("profileModal").classList.add("open");
+}
+function renderCalendar(){
+  const days=14, today=new Date(); today.setHours(0,0,0,0);
+  const played=new Set(Profile.history.map(h=>h.date));
+  let html="";
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const ds=d.toLocaleDateString(), on=played.has(ds);
+    html+=`<div class="d${on?" on":""}${i===0?" today":""}" title="${ds}">${d.getDate()}</div>`;
+  }
+  document.getElementById("calGrid").innerHTML=html;
+  let s=0; for(let i=0;;i++){const d=new Date(today);d.setDate(today.getDate()-i);if(played.has(d.toLocaleDateString()))s++;else break;}
+  document.getElementById("calLbl").textContent=s>0?`${s}-day play streak`:"Play today to start a streak";
 }
 
 /* ============================================================
