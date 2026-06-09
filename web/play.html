@@ -367,6 +367,36 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
 
 /* ── animations ── */
 @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}60%{transform:translateX(3px);}80%{transform:translateX(2px);}}
+@keyframes pop{0%{transform:scale(.6);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+@keyframes rise{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* ── toast (achievement unlocked) ── */
+#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fbf7ef;font-family:var(--font-display);letter-spacing:.5px;
+  padding:11px 18px;border-radius:12px;font-size:.86rem;font-weight:700;z-index:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── celebration screen ── */
+.winmodal{text-align:center;animation:pop .35s ease;}
+.win-emoji{font-size:2.6rem;color:var(--accent2);margin-bottom:4px;animation:pop .5s ease;}
+.win-ach-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(194,104,58,.14);
+  border:1px solid rgba(194,104,58,.35);color:var(--accent2);border-radius:20px;
+  padding:4px 12px;font-size:.8rem;font-weight:700;margin:3px;}
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:490;overflow:hidden;}
+.confetti i{position:absolute;top:-12px;width:8px;height:12px;opacity:.9;animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.6;}}
+
+/* ── achievements grid (profile) ── */
+.ach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 4px;}
+.ach{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;
+  background:var(--surface2);border:1px solid var(--border);text-align:center;}
+.ach .ai{font-size:1.2rem;color:var(--dim);}
+.ach.on{background:rgba(194,104,58,.12);border-color:rgba(194,104,58,.35);}
+.ach.on .ai{color:var(--accent2);}
+.ach .al{font-size:.6rem;line-height:1.2;color:var(--muted);}
+.ach.on .al{color:var(--ink);font-weight:600;}
 </style>
 </head>
 <body>
@@ -408,6 +438,10 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
         <label class="toggle" id="lblTimer" title="Show/hide timer" role="menuitemcheckbox">
           <input type="checkbox" id="cbTimer" checked/>
           <span>⏱ Timer</span>
+        </label>
+        <label class="toggle" id="lblSound" title="Sound & vibration" role="menuitemcheckbox">
+          <input type="checkbox" id="cbSound" checked/>
+          <span>♪ Sound</span>
         </label>
         <button id="btnPrint" role="menuitem" title="Print blank crossword">🖨 Print</button>
         <button id="btnClear" class="danger" role="menuitem">🧹 Clear</button>
@@ -572,8 +606,31 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
     </div>
     <input class="name-input" id="playerNameInput" type="text" maxlength="20" placeholder="Enter your name…" aria-label="Player name"/>
     <button class="save-name" id="saveNameBtn">Save name</button>
-    <div id="historyList" style="margin-top:12px;max-height:120px;overflow-y:auto;"></div>
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:700;margin-top:14px;">Achievements</div>
+    <div id="achGrid" class="ach-grid"></div>
+    <div id="historyList" style="margin-top:12px;max-height:110px;overflow-y:auto;"></div>
     <button class="mcancel" id="profileClose">Close</button>
+  </div>
+</div>
+
+<!-- Celebration / win screen -->
+<div class="modal-overlay" id="winModal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="modal winmodal">
+    <div class="win-emoji" id="winMark">★</div>
+    <div class="ob-title" id="winTitle" style="text-align:center;">Wakunda!</div>
+    <p id="winSub" style="text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:16px;"></p>
+    <div class="stat-grid" style="margin:0 0 16px;">
+      <div class="stat-box"><div class="stat-val" id="winTime">0:00</div><div class="stat-lbl">Time</div></div>
+      <div class="stat-box"><div class="stat-val" id="winWords">0</div><div class="stat-lbl">Words</div></div>
+      <div class="stat-box"><div class="stat-val" id="winStreak">0</div><div class="stat-lbl">🔥 Streak</div></div>
+      <div class="stat-box"><div class="stat-val" id="winClean">—</div><div class="stat-lbl">Result</div></div>
+    </div>
+    <div id="winAch" style="margin-bottom:14px;"></div>
+    <div class="btn-row">
+      <button class="mbtn" id="winShare" style="text-align:center;font-weight:700;"><b style="margin:0;">↗ Share result</b></button>
+      <button class="mbtn" id="winNext" style="text-align:center;border-color:var(--accent);"><b style="margin:0;color:var(--accent2);">New puzzle →</b></button>
+    </div>
+    <button class="mcancel" id="winClose">Close</button>
   </div>
 </div>
 
@@ -769,21 +826,23 @@ const LEVEL_PRESETS={
   advanced:    {complexity:"expert",      wordTarget:12,timerMode:"down",countdownMins:8, learnMode:false}
 };
 const GameConfig={
-  timerMode:"up",countdownMins:5,wordTarget:8,complexity:"intermediate",learnMode:false,
-  load(){try{const d=JSON.parse(localStorage.getItem(CFGKEY)||"{}");["timerMode","countdownMins","wordTarget","complexity","learnMode"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}
+  timerMode:"up",countdownMins:5,wordTarget:8,complexity:"intermediate",learnMode:false,sound:true,
+  load(){try{const d=JSON.parse(localStorage.getItem(CFGKEY)||"{}");["timerMode","countdownMins","wordTarget","complexity","learnMode","sound"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}
     /* migrate old 3-level names */
     const map={easy:"learner",medium:"intermediate",hard:"expert"};if(map[this.complexity])this.complexity=map[this.complexity];
     if(!COMPLEXITY_RULES[this.complexity])this.complexity="intermediate";
     return this;},
-  save(){try{localStorage.setItem(CFGKEY,JSON.stringify({timerMode:this.timerMode,countdownMins:this.countdownMins,wordTarget:this.wordTarget,complexity:this.complexity,learnMode:this.learnMode}));}catch(e){}}
+  save(){try{localStorage.setItem(CFGKEY,JSON.stringify({timerMode:this.timerMode,countdownMins:this.countdownMins,wordTarget:this.wordTarget,complexity:this.complexity,learnMode:this.learnMode,sound:this.sound}));}catch(e){}}
 };
 GameConfig.load();
 const Profile={
-  name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],
-  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20)}));}catch(e){}},
-  recordSolve(secs,clean,lang,cx){
+  name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],achievements:[],wordsSolved:0,langsPlayed:[],
+  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history","achievements","wordsSolved","langsPlayed"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
+  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20),achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed}));}catch(e){}},
+  recordSolve(secs,clean,lang,cx,wordCount){
     this.totalSolved++;
+    this.wordsSolved+=(wordCount||0);
+    if(this.langsPlayed.indexOf(lang)<0)this.langsPlayed.push(lang);
     if(clean){this.streak++;this.cleanSolves++;if(this.bestSecs===null||secs<this.bestSecs)this.bestSecs=secs;}
     else{this.streak=0;}
     const d=new Date();this.history.unshift({date:d.toLocaleDateString(),lang,cx,secs,clean});
@@ -791,6 +850,58 @@ const Profile={
   }
 };
 Profile.load();
+
+/* ============================================================
+   Sound + haptics (toggleable; mobile word-game feel)
+   ============================================================ */
+const SFX=(function(){
+  let ctx=null;
+  function ac(){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();return ctx;}catch(e){return null;}}
+  function tone(freq,dur,type,vol){
+    if(!GameConfig.sound)return; const c=ac(); if(!c)return;
+    const o=c.createOscillator(),g=c.createGain();
+    o.type=type||"sine";o.frequency.value=freq;
+    g.gain.value=vol||0.06; o.connect(g);g.connect(c.destination);
+    const t=c.currentTime;o.start(t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.stop(t+dur);
+  }
+  function haptic(ms){if(GameConfig.sound&&navigator.vibrate)try{navigator.vibrate(ms);}catch(e){}}
+  return {
+    tick(){tone(420,0.05,"sine",0.04);},
+    word(){tone(660,0.12,"triangle",0.06);haptic(15);},
+    win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.18,"triangle",0.07),i*120));haptic([20,40,20,60]);},
+    error(){tone(180,0.16,"sawtooth",0.05);haptic(40);},
+    hint(){tone(330,0.1,"sine",0.05);}
+  };
+})();
+
+/* ============================================================
+   Achievements
+   ============================================================ */
+const ACHIEVEMENTS=[
+  {id:"first",  icon:"◆", label:"First Word",     desc:"Solve your first puzzle",            test:p=>p.totalSolved>=1},
+  {id:"clean",  icon:"★", label:"Clean Sweep",    desc:"Solve a puzzle with no hints",       test:p=>p.cleanSolves>=1},
+  {id:"streak3",icon:"▲", label:"On a Roll",      desc:"3-puzzle clean streak",              test:p=>p.streak>=3},
+  {id:"streak7",icon:"✦", label:"Week Strong",    desc:"7-puzzle clean streak",              test:p=>p.streak>=7},
+  {id:"words50",icon:"▦", label:"Fifty Words",    desc:"Solve 50 words in total",            test:p=>p.wordsSolved>=50},
+  {id:"words200",icon:"▣",label:"Word Collector", desc:"Solve 200 words in total",           test:p=>p.wordsSolved>=200},
+  {id:"polyglot",icon:"◈",label:"Polyglot",       desc:"Play all three languages",           test:p=>p.langsPlayed.length>=3},
+  {id:"ten",    icon:"●", label:"Dedicated",      desc:"Solve 10 puzzles",                   test:p=>p.totalSolved>=10}
+];
+function checkAchievements(){
+  const newly=[];
+  for(const a of ACHIEVEMENTS){
+    if(a.test(Profile)&&Profile.achievements.indexOf(a.id)<0){Profile.achievements.push(a.id);newly.push(a);}
+  }
+  if(newly.length){Profile.save();newly.forEach((a,i)=>setTimeout(()=>toast(`${a.icon}  Achievement: ${a.label}`),i*1400));}
+  return newly;
+}
+let _toastT=null;
+function toast(msg){
+  let el=document.getElementById("toast");
+  if(!el){el=document.createElement("div");el.id="toast";document.body.appendChild(el);}
+  el.textContent=msg;el.classList.add("show");
+  if(_toastT)clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove("show"),2600);
+}
 
 /* ============================================================
    4b. GAME STATE
@@ -847,7 +958,7 @@ function newPuzzle(langName,forceDaily=false){
     guesses.set(k,"");learnMastery.set(k,0);
     if(GameConfig.learnMode&&learnStudyPhase)guesses.set(k,puzzle.cells.get(k));
   }
-  active=null;pending="";cleanSolve=true;gameOver=false;
+  active=null;pending="";cleanSolve=true;gameOver=false;_lastSolved=0;
   autochecking=rules.autoCheckDefault;
   document.getElementById("cbAuto").checked=autochecking;
   document.getElementById("lblAuto").classList.toggle("on",autochecking);
@@ -953,7 +1064,7 @@ function advance(n=1){if(!active)return;const len=wordKeys(active.placement).len
 function advanceSmart(n=1){if(!active)return;const keys=wordKeys(active.placement);let idx=active.idx+n;while(n>0&&idx<keys.length&&(guesses.get(keys[idx])||""))idx+=n;active.idx=Math.max(0,Math.min(idx,keys.length-1));}
 function backspace(){if(!active)return;pending="";const keys=wordKeys(active.placement);if((guesses.get(keys[active.idx])||"")===""&&active.idx>0)active.idx--;const k=keys[active.idx];guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);schedRender();}
 function commitGrapheme(g,k){guesses.set(k,g);if(pencilMode)pencilSet.add(k);else pencilSet.delete(k);}
-function typeGrapheme(g){if(!active)return;pending="";const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;commitGrapheme(g,keys[active.idx]);advance(1);schedRender();}
+function typeGrapheme(g){if(!active)return;pending="";const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;SFX.tick();commitGrapheme(g,keys[active.idx]);advance(1);schedRender();}
 function composeKey(k){
   if(!active)return;const keys=wordKeys(active.placement);if(active.idx>=keys.length)return;
   const cur=keys[active.idx],cand=pending+k;
@@ -963,9 +1074,13 @@ function composeKey(k){
   if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
   commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
 }
+let _lastSolved=0;
 function schedRender(){
   if(renderTimer)clearTimeout(renderTimer);
-  renderTimer=setTimeout(()=>{renderTimer=null;const prog=wordProgress();setStatus(`${prog.s}/${prog.t} words complete`);updateProgress();if(active)trackLearnMastery(active.placement);if(allSolved())onWin();else{render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();}},60);
+  renderTimer=setTimeout(()=>{renderTimer=null;const prog=wordProgress();
+    if(prog.s>_lastSolved)SFX.word();        // chime when a new word is completed
+    _lastSolved=prog.s;
+    setStatus(`${prog.s}/${prog.t} words complete`);updateProgress();if(active)trackLearnMastery(active.placement);if(allSolved())onWin();else{render();syncClues();updateClueBar();if(GameConfig.learnMode)updateVocabCard();}},60);
 }
 
 /* ============================================================
@@ -976,7 +1091,7 @@ function checkManual(){
   for(const[k,v]of guesses){if(v){filled++;if(v!==puzzle.cells.get(k))wrong++;}}
   if(!filled){setStatus("Nothing filled yet.");return;}
   if(!rules.checkAnytime&&filled<total){setStatus(`Hard mode: fill all ${total} cells before checking.`,"err");return;}
-  if(wrong)setStatus(`${wrong} error${wrong>1?"s":""} — keep going.`,"err");
+  if(wrong){setStatus(`${wrong} error${wrong>1?"s":""} — keep going.`,"err");SFX.error();}
   else setStatus("All filled cells correct ✓","info");
   render();
   /* Flash wrong cells red for 1.2s even when autocheck is off (users expect Check to mark errors) */
@@ -989,22 +1104,70 @@ function checkManual(){
   }
 }
 function hintAllowed(){const r=COMPLEXITY_RULES[GameConfig.complexity];if(hintsUsed>=r.hintBudget){setStatus(`No hints left on ${r.label} difficulty.`,"err");return false;}return true;}
-function revealLetter(){if(!active){setStatus("Select a cell.");return;}if(!hintAllowed())return;const k=wordKeys(active.placement)[active.idx];guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);hintsUsed++;cleanSolve=false;updateHintBudgetBadge();advance(1);schedRender();}
-function revealWord(){if(!active){setStatus("Select a word.");return;}if(!hintAllowed())return;wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();}
+function revealLetter(){if(!active){setStatus("Select a cell.");return;}if(!hintAllowed())return;const k=wordKeys(active.placement)[active.idx];guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);hintsUsed++;cleanSolve=false;SFX.hint();updateHintBudgetBadge();advance(1);schedRender();}
+function revealWord(){if(!active){setStatus("Select a word.");return;}if(!hintAllowed())return;wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});hintsUsed++;cleanSolve=false;SFX.hint();updateHintBudgetBadge();schedRender();}
 function revealPuzzle(){for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();setStatus("Puzzle revealed.");}
 
 /* ============================================================
    10. WIN
    ============================================================ */
+let lastWin=null; // {secs,clean,lang,cx,words} for the celebration screen + share
 function onWin(){
   if(gameOver){render();syncClues();return;} // timed-out: puzzle revealed, not a real solve — don't record
   stopTimer();updateProgress();
+  const wordCount=puzzle.placements.length;
   const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
-  Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity);updateProfile();
-  if(cleanSolve){setStatus(`🌟 Wakunda! Clean solve in ${m}:${s} · Streak: ${Profile.streak}`,"win");}
-  else{setStatus(`✅ Completed in ${m}:${s}`);}
+  Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity,wordCount);updateProfile();
+  lastWin={secs:timerSec,mm:m,ss:s,clean:cleanSolve,lang:lang.name,cx:COMPLEXITY_RULES[GameConfig.complexity].label,words:wordCount,daily:dailyMode};
+  if(cleanSolve){setStatus(`Wakunda! Clean solve in ${m}:${s} · Streak: ${Profile.streak}`,"win");}
+  else{setStatus(`Completed in ${m}:${s}`);}
   autochecking=false;document.getElementById("cbAuto").checked=false;document.getElementById("lblAuto").classList.remove("on");
   render();syncClues();
+  SFX.win();
+  const earned=checkAchievements();
+  showWinScreen(earned);
+}
+
+/* ── celebration screen + share ── */
+function showWinScreen(earned){
+  if(!lastWin)return;
+  document.getElementById("winMark").textContent=lastWin.clean?"★":"◆";
+  document.getElementById("winTitle").textContent=lastWin.clean?"Wakunda!":"Complete";
+  document.getElementById("winSub").textContent=`${lastWin.lang} · ${lastWin.cx}${lastWin.daily?" · Daily":""}`;
+  document.getElementById("winTime").textContent=`${lastWin.mm}:${lastWin.ss}`;
+  document.getElementById("winWords").textContent=lastWin.words;
+  document.getElementById("winStreak").textContent=Profile.streak;
+  document.getElementById("winClean").textContent=lastWin.clean?"Clean ★":"Hints used";
+  document.getElementById("winAch").innerHTML=(earned&&earned.length)
+    ? earned.map(a=>`<span class="win-ach-chip">${a.icon} ${a.label}</span>`).join("")
+    : "";
+  document.getElementById("winModal").classList.add("open");
+  if(lastWin.clean)confetti();
+}
+function buildShareText(){
+  if(!lastWin)return "I played Maneno — the Bantu crossword.";
+  const star=lastWin.clean?" ★ clean":"";
+  return `Maneno — ${lastWin.lang} (${lastWin.cx})\n`+
+         `${lastWin.daily?"Daily puzzle":"Puzzle"}: ${lastWin.words} words in ${lastWin.mm}:${lastWin.ss}${star}\n`+
+         `A crossword in Shona, Swahili & Zulu — https://maneno.loca.lt`;
+}
+async function shareResult(){
+  const text=buildShareText();
+  try{
+    if(navigator.share){await navigator.share({title:"Maneno",text});return;}
+  }catch(e){return;}
+  try{await navigator.clipboard.writeText(text);toast("Result copied to clipboard");}
+  catch(e){toast("Sharing not supported");}
+}
+function confetti(){
+  if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const cols=["#2d4a7c","#c2683a","#7d8c5a","#1c1a17","#e0a44c"];
+  const wrap=document.createElement("div");wrap.className="confetti";
+  for(let i=0;i<70;i++){const s=document.createElement("i");
+    s.style.left=Math.random()*100+"vw";s.style.background=cols[i%cols.length];
+    s.style.animationDuration=(1.6+Math.random()*1.6)+"s";s.style.animationDelay=(Math.random()*0.5)+"s";
+    s.style.transform=`rotate(${Math.random()*360}deg)`;wrap.appendChild(s);}
+  document.body.appendChild(wrap);setTimeout(()=>wrap.remove(),3600);
 }
 
 /* ============================================================
@@ -1075,7 +1238,11 @@ function openProfile(){
   document.getElementById("psClean").textContent=Profile.cleanSolves;
   document.getElementById("playerNameInput").value=Profile.name||"";
   const hl=document.getElementById("historyList");
-  hl.innerHTML=Profile.history.slice(0,10).map(h=>`<div class="history-item">${h.date} · ${h.lang} · ${h.cx} · ${h.clean?"⭐ clean":""} ${String(Math.floor(h.secs/60)).padStart(2,"0")}:${String(h.secs%60).padStart(2,"0")}</div>`).join("")||`<div style="color:var(--dim);font-size:.78rem;">No solved puzzles yet.</div>`;
+  hl.innerHTML=Profile.history.slice(0,8).map(h=>`<div class="history-item">${h.date} · ${h.lang} · ${h.cx} · ${h.clean?"★ clean":""} ${String(Math.floor(h.secs/60)).padStart(2,"0")}:${String(h.secs%60).padStart(2,"0")}</div>`).join("")||`<div style="color:var(--dim);font-size:.78rem;">No solved puzzles yet.</div>`;
+  document.getElementById("achGrid").innerHTML=ACHIEVEMENTS.map(a=>{
+    const on=Profile.achievements.indexOf(a.id)>=0;
+    return `<div class="ach${on?" on":""}" title="${a.desc}"><div class="ai">${a.icon}</div><div class="al">${a.label}</div></div>`;
+  }).join("");
   document.getElementById("profileModal").classList.add("open");
 }
 
@@ -1136,6 +1303,14 @@ document.getElementById("btnPrint").addEventListener("click",printPuzzle);
 document.getElementById("cbAuto").addEventListener("change",function(){autochecking=this.checked;document.getElementById("lblAuto").classList.toggle("on",this.checked);render();});
 document.getElementById("cbPencil").addEventListener("change",function(){pencilMode=this.checked;document.getElementById("lblPencil").classList.toggle("on",this.checked);document.body.classList.toggle("pencil-mode",this.checked);});
 document.getElementById("cbTimer").addEventListener("change",function(){timerOn=this.checked;document.getElementById("timer").classList.toggle("hidden",!this.checked);if(this.checked&&!timerInterval)startTimer();if(!this.checked)stopTimer();document.getElementById("lblTimer").classList.toggle("on",this.checked);});
+/* Sound toggle */
+(function(){const cb=document.getElementById("cbSound");cb.checked=GameConfig.sound;document.getElementById("lblSound").classList.toggle("on",GameConfig.sound);
+  cb.addEventListener("change",function(){GameConfig.sound=this.checked;GameConfig.save();document.getElementById("lblSound").classList.toggle("on",this.checked);if(this.checked)SFX.tick();});})();
+/* Win celebration screen buttons */
+document.getElementById("winClose").addEventListener("click",()=>document.getElementById("winModal").classList.remove("open"));
+document.getElementById("winModal").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open");});
+document.getElementById("winShare").addEventListener("click",shareResult);
+document.getElementById("winNext").addEventListener("click",()=>{document.getElementById("winModal").classList.remove("open");newPuzzle(document.getElementById("lang").value);});
 /* Hint modal */
 document.getElementById("btnHint").addEventListener("click",()=>document.getElementById("hintModal").classList.add("open"));
 document.getElementById("hintCancel").addEventListener("click",()=>document.getElementById("hintModal").classList.remove("open"));
@@ -1152,7 +1327,7 @@ document.getElementById("saveNameBtn").addEventListener("click",()=>{const n=doc
 document.getElementById("btnSettings").addEventListener("click",openSettings);
 document.getElementById("sdClose").addEventListener("click",closeSettings);
 document.getElementById("sdBackdrop").addEventListener("click",closeSettings);
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();if(overflowMenu.classList.contains("open"))closeMore();if(document.getElementById("aboutModal").classList.contains("open"))closeAbout();}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(document.getElementById("settingsDrawer").classList.contains("open"))closeSettings();if(document.getElementById("hintModal").classList.contains("open"))document.getElementById("hintModal").classList.remove("open");if(document.getElementById("profileModal").classList.contains("open"))document.getElementById("profileModal").classList.remove("open");if(document.getElementById("onboardModal").classList.contains("open"))closeOnboard();if(overflowMenu.classList.contains("open"))closeMore();if(document.getElementById("aboutModal").classList.contains("open"))closeAbout();if(document.getElementById("winModal").classList.contains("open"))document.getElementById("winModal").classList.remove("open");}if((e.metaKey||e.ctrlKey)&&e.key===","){e.preventDefault();openSettings();}});
 document.querySelectorAll("input[name=timerMode]").forEach(r=>r.addEventListener("change",()=>{document.getElementById("countdownRow").style.display=r.value==="down"?"flex":"none";}));
 document.getElementById("wordCountSlider").addEventListener("input",function(){document.getElementById("wordCountVal").textContent=this.value;});
 document.getElementById("cxSelect").addEventListener("change",function(){document.getElementById("sdHintDesc").textContent=HINT_DESCS[this.value]||"";});
