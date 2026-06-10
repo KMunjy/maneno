@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maneno · Native-Speaker Review</title>
+<meta name="theme-color" content="#efe9dc"/>
+<style>
+:root{
+  --bg:#efe9dc;--surface:#e4ddcb;--surface2:#dbd2bc;
+  --border:rgba(28,26,23,.12);--border2:rgba(28,26,23,.22);
+  --ink:#1c1a17;--muted:#6b6457;--dim:#8a8170;
+  --accent:#2d4a7c;--accent2:#c2683a;--good:#5c7a3a;--bad:#b5462f;
+  --fontd:"Futura","Century Gothic","Trebuchet MS",ui-sans-serif,system-ui,sans-serif;
+  --fontb:"Gill Sans","Gill Sans MT","Avenir","Segoe UI",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fontb);background:var(--bg);color:var(--ink);padding-bottom:40px;}
+.chev{height:10px;background:repeating-linear-gradient(135deg,#2d4a7c 0 14px,#c2683a 14px 28px);}
+header{padding:16px 20px;border-bottom:1px solid var(--border2);}
+.brand{font-family:var(--fontd);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-size:1.15rem;}
+.intro{color:var(--muted);font-size:.86rem;margin-top:6px;max-width:780px;line-height:1.5;}
+.wrap{max-width:1000px;margin:0 auto;padding:16px 20px;}
+.bar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border2);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 20px;}
+select,input[type=search]{font:inherit;font-size:.88rem;background:#fbf7ef;border:1px solid var(--border2);color:var(--ink);border-radius:9px;padding:8px 12px;}
+button{font:inherit;cursor:pointer;border-radius:9px;padding:8px 14px;font-size:.85rem;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--ink);}
+button:hover{border-color:var(--accent);}
+button.primary{background:var(--accent2);color:#fbf7ef;border-color:var(--accent2);}
+.prog{font-size:.82rem;color:var(--muted);}
+.prog b{color:var(--ink);}
+.cathead{font-family:var(--fontd);text-transform:uppercase;letter-spacing:1px;font-size:.74rem;color:var(--accent);margin:22px 0 8px;font-weight:700;}
+.row{display:grid;grid-template-columns:150px 1fr 150px auto;gap:12px;align-items:center;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:7px;}
+.row.ok{border-color:rgba(92,122,58,.5);background:rgba(92,122,58,.06);}
+.row.flag{border-color:rgba(181,70,47,.5);background:rgba(181,70,47,.07);}
+.ans{font-weight:800;font-size:1rem;}
+.ans .ph{display:block;font-size:.7rem;color:var(--dim);font-weight:400;}
+.clue{font-size:.9rem;}
+.clue .en{display:block;font-size:.78rem;color:var(--accent);margin-top:2px;}
+.judge{display:flex;gap:6px;align-items:center;}
+.jb{padding:5px 10px;border-radius:7px;font-size:.78rem;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:#fbf7ef;}
+.jb.okb.sel{background:var(--good);color:#fff;border-color:var(--good);}
+.jb.flagb.sel{background:var(--bad);color:#fff;border-color:var(--bad);}
+.note{grid-column:1/-1;margin-top:6px;}
+.note input{width:100%;font:inherit;font-size:.82rem;background:#fbf7ef;border:1px dashed var(--border2);border-radius:8px;padding:6px 10px;}
+.note{display:none;}
+.row.flag .note{display:block;}
+@media(max-width:640px){.row{grid-template-columns:1fr;gap:6px;}}
+.audit{background:rgba(194,104,58,.1);border:1px solid rgba(194,104,58,.3);border-radius:6px;font-size:.72rem;color:var(--accent2);padding:2px 7px;display:inline-block;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="chev"></div>
+<header class="wrap">
+  <div class="brand">Maneno · Native-Speaker Review</div>
+  <p class="intro">Thank you for reviewing. For each word, confirm the <b>spelling</b>, the <b>clue</b> (in-language), and the <b>English meaning</b> are correct. Tap <b>OK</b> if good, or <b>Flag</b> and add a note/correction. Your progress saves automatically in this browser. When done, click <b>Export</b> to send the results back. Words the automated audit pre-flagged show a marker — please check those first.</p>
+</header>
+<div class="bar">
+  <select id="lang"></select>
+  <select id="filter">
+    <option value="all">All</option>
+    <option value="unreviewed">Unreviewed</option>
+    <option value="flagged">Flagged</option>
+    <option value="audit">Audit-flagged</option>
+  </select>
+  <input type="search" id="search" placeholder="Search…"/>
+  <span class="prog" id="prog"></span>
+  <span style="flex:1"></span>
+  <button id="export" class="primary">⇩ Export results</button>
+</div>
+<div class="wrap" id="list"></div>
+
+<script src="audit-flags.js"></script>
+<script src="words.js"></script>
+<script>
+"use strict";
+const RKEY="maneno_v1_review";
+const BASE=window.BASE_LANGUAGES||window.LANGUAGES;
+const LANGS=Object.keys(BASE);
+/* Optional: audit-flagged answers can be dropped in here per language to surface first */
+const AUDIT_FLAGS=(window.MANENO_AUDIT_FLAGS)||{};
+let review=load();
+function load(){try{return JSON.parse(localStorage.getItem(RKEY)||"{}");}catch(e){return{};}}
+function save(){localStorage.setItem(RKEY,JSON.stringify(review));}
+function rget(lang,ans){return (review[lang]&&review[lang][ans])||{};}
+function rset(lang,ans,obj){review[lang]=review[lang]||{};review[lang][ans]={...rget(lang,ans),...obj};save();}
+
+function curLang(){return document.getElementById("lang").value;}
+function entries(lang){return BASE[lang].words.slice();}
+
+function render(){
+  const lang=curLang(), filt=document.getElementById("filter").value, q=document.getElementById("search").value.trim().toLowerCase();
+  const flags=new Set(AUDIT_FLAGS[lang]||[]);
+  let list=entries(lang);
+  if(q)list=list.filter(w=>(w[0]+" "+w[1]+" "+w[2]).toLowerCase().includes(q));
+  if(filt==="unreviewed")list=list.filter(w=>!rget(lang,w[0]).status);
+  if(filt==="flagged")list=list.filter(w=>rget(lang,w[0]).status==="flag");
+  if(filt==="audit")list=list.filter(w=>flags.has(w[0]));
+  // group by category
+  const cats={}; list.forEach(w=>{(cats[w[4]]=cats[w[4]]||[]).push(w);});
+  const el=document.getElementById("list"); el.innerHTML="";
+  Object.keys(cats).sort().forEach(cat=>{
+    const h=document.createElement("div");h.className="cathead";h.textContent=cat;el.appendChild(h);
+    cats[cat].forEach(w=>el.appendChild(rowEl(lang,w,flags.has(w[0]))));
+  });
+  if(!list.length)el.innerHTML='<p style="color:var(--dim);padding:20px;">Nothing matches.</p>';
+  prog();
+}
+function rowEl(lang,w,audit){
+  const st=rget(lang,w[0]);
+  const d=document.createElement("div"); d.className="row"+(st.status==="ok"?" ok":st.status==="flag"?" flag":"");
+  d.innerHTML=`
+    <div class="ans">${esc(w[0])}<span class="ph">/${esc(w[3]||"")}/</span>${audit?'<span class="audit">audit-flagged</span>':''}</div>
+    <div class="clue">${esc(w[1])}<span class="en">EN: ${esc(w[2])}</span></div>
+    <div class="muted" style="font-size:.78rem;color:var(--muted)">${esc(w[4])}</div>
+    <div class="judge">
+      <button class="jb okb${st.status==="ok"?" sel":""}" data-ok>OK</button>
+      <button class="jb flagb${st.status==="flag"?" sel":""}" data-flag>Flag</button>
+    </div>
+    <div class="note"><input type="text" placeholder="Correction / note for this word…" value="${esc(st.note||"")}" data-note/></div>`;
+  d.querySelector("[data-ok]").onclick=()=>{rset(lang,w[0],{status:"ok"});render();};
+  d.querySelector("[data-flag]").onclick=()=>{rset(lang,w[0],{status:"flag"});render();};
+  d.querySelector("[data-note]").oninput=e=>rset(lang,w[0],{note:e.target.value});
+  return d;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function prog(){
+  const lang=curLang(), total=entries(lang).length;
+  const r=review[lang]||{}; const done=Object.values(r).filter(x=>x.status).length;
+  const flagged=Object.values(r).filter(x=>x.status==="flag").length;
+  document.getElementById("prog").innerHTML=`<b>${done}</b>/${total} reviewed · <b>${flagged}</b> flagged`;
+}
+document.getElementById("export").onclick=()=>{
+  // CSV of flagged + notes across all languages
+  let rows=[["language","answer","clue","english","status","note"]];
+  LANGS.forEach(l=>{entries(l).forEach(w=>{const st=rget(l,w[0]);if(st.status){rows.push([l,w[0],w[1],w[2],st.status,st.note||""]);}});});
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="maneno-review-results.csv";a.click();
+};
+(function init(){
+  const fl=document.getElementById("lang");fl.innerHTML=LANGS.map(l=>`<option>${l}${BASE[l].config&&BASE[l].config.language==="Zulu"?" (Beta)":""}</option>`).join("");
+  fl.onchange=()=>{fl.value=fl.value.replace(" (Beta)","");render();};
+  // normalise option values (strip Beta tag from value)
+  [...fl.options].forEach(o=>o.value=o.textContent.replace(" (Beta)",""));
+  document.getElementById("filter").onchange=render;
+  document.getElementById("search").oninput=render;
+  render();
+})();
+</script>
+</body>
+</html>
