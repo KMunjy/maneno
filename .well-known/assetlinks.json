@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.kmunjy.maneno",
+    "sha256_cert_fingerprints": [
+      "B1:53:81:1D:49:DA:3D:7B:E9:8F:33:CC:34:D2:E7:0D:E4:12:0F:BD:00:89:34:ED:B5:15:DE:C4:28:6F:84:8E"
+    ]
+  }
+}]
