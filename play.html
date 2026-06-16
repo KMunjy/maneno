@@ -895,7 +895,7 @@ const SFX=(function(){
   function haptic(ms){
     if(!GameConfig.sound)return;
     const C=window.Capacitor; // native iOS engine when wrapped; inert in browser
-    if(C&&C.Plugins&&C.Plugins.Haptics){try{C.Plugins.Haptics.impact({style:ms>30?"Medium":"Light"});return;}catch(e){}}
+    if(C&&C.Plugins&&C.Plugins.Haptics){try{C.Plugins.Haptics.impact({style:ms>30?"MEDIUM":"LIGHT"}).catch(()=>{});return;}catch(e){}}
     if(navigator.vibrate)try{navigator.vibrate(ms);}catch(e){}
   }
   return {

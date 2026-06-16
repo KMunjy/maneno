@@ -1,0 +1,4 @@
+qa/node_modules/
+qa/test-results/
+qa/playwright-report/
+qa/results.json
