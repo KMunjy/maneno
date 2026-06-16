@@ -892,7 +892,12 @@ const SFX=(function(){
     g.gain.value=vol||0.06; o.connect(g);g.connect(c.destination);
     const t=c.currentTime;o.start(t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.stop(t+dur);
   }
-  function haptic(ms){if(GameConfig.sound&&navigator.vibrate)try{navigator.vibrate(ms);}catch(e){}}
+  function haptic(ms){
+    if(!GameConfig.sound)return;
+    const C=window.Capacitor; // native iOS engine when wrapped; inert in browser
+    if(C&&C.Plugins&&C.Plugins.Haptics){try{C.Plugins.Haptics.impact({style:ms>30?"Medium":"Light"});return;}catch(e){}}
+    if(navigator.vibrate)try{navigator.vibrate(ms);}catch(e){}
+  }
   return {
     tick(){tone(420,0.05,"sine",0.04);},
     word(){tone(660,0.12,"triangle",0.06);haptic(15);},
@@ -1200,6 +1205,8 @@ function buildShareText(){
 }
 async function shareResult(){
   const text=buildShareText();
+  const C=window.Capacitor; // native iOS share sheet when wrapped; inert in browser
+  if(C&&C.Plugins&&C.Plugins.Share){try{await C.Plugins.Share.share({title:"Maneno",text});return;}catch(e){}}
   try{
     if(navigator.share){await navigator.share({title:"Maneno",text});return;}
   }catch(e){return;}
