@@ -4,3 +4,4 @@ qa/playwright-report/
 qa/results.json
 .DS_Store
 qa/uat-shots/
+qa/store-shots/
