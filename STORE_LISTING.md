@@ -10,7 +10,7 @@ live in this repo. Edit freely before submitting.
 | `/Users/kmunj/maneno-android/android.keystore` + `KEYSTORE_INFO.txt` | **⚠ BACK UP** — signs all future updates |
 | `store-assets/icon-1024.png` | App icon (1024², no alpha) — both stores |
 | `store-assets/feature-graphic-1024x500.png` | Play feature graphic |
-| `store-assets/screen-1-grid.png` · `screen-2-learn.png` · `screen-3-streak.png` | Phone screenshots (1290×2796) |
+| `store-assets/screen-{1-grid,2-win,3-learn,4-zulu,5-streak}.png` | Phone screenshots — 5, 1290×2796, **captured from the real app** (UAT frames) |
 | `https://kmunjy.github.io/maneno/privacy.html` | Privacy policy URL (both stores) |
 | `https://kmunjy.github.io/maneno/.well-known/assetlinks.json` | Digital Asset Links (live) |
 

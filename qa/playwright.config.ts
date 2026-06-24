@@ -18,5 +18,8 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
     { name: 'mobile',  use: { ...devices['Pixel 5'] } },
+    // Store screenshots: mobile layout at exactly 1290×2796 (App Store 6.7" / Play phone).
+    { name: 'store', use: { browserName: 'chromium', viewport: { width: 430, height: 932 },
+        deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
   ],
 });

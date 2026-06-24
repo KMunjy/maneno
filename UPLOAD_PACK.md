@@ -35,7 +35,7 @@ key fingerprint is different. After you upload the first AAB:
 | Full description | the block in `STORE_LISTING.md` (≤4000) |
 | App icon | `store-assets/icon-1024.png` |
 | Feature graphic | `store-assets/feature-graphic-1024x500.png` |
-| Phone screenshots | `store-assets/screen-1-grid.png`, `screen-2-learn.png`, `screen-3-streak.png` |
+| Phone screenshots (5, 1290×2796, **real app**) | `screen-1-grid.png` (grapheme grid), `screen-2-win.png` (WAKUNDA), `screen-3-learn.png` (Learn Mode), `screen-4-zulu.png` (3 languages), `screen-5-streak.png` (streak+achievements) |
 | Category | Games → **Word** (secondary: Education) |
 | Email | kkmunjeri83@gmail.com |
 | Privacy policy | `https://kmunjy.github.io/maneno/privacy.html` |
@@ -59,7 +59,7 @@ add 12+ testers (recruit from the diaspora FB groups per MARKETING.md) → run ~
 | Description | full block from `STORE_LISTING.md` |
 | Promotional text | `The first crossword built for Bantu languages.` |
 | App icon | `store-assets/icon-1024.png` (no alpha ✓) |
-| 6.7" screenshots | the three 1290×2796 PNGs |
+| 6.7" screenshots | the five 1290×2796 PNGs in `store-assets/screen-*.png` |
 | Bundle ID | `com.kmunjy.maneno` |
 | Category | Games (Word) / secondary Education |
 | Privacy policy | `https://kmunjy.github.io/maneno/privacy.html` |
