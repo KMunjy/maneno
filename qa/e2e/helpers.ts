@@ -5,7 +5,7 @@ export async function startGame(page: Page) {
   const errors: string[] = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', e => errors.push(String(e)));
-  await page.goto('/play.html');
+  await page.goto('play.html'); // relative → respects baseURL subpath (live is /maneno/)
   // First run shows the onboarding modal; dismiss it if present.
   const start = page.locator('#obStart');
   if (await start.isVisible().catch(() => false)) await start.click();

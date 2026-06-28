@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   reporter: [['list'], ['json', { outputFile: 'results.json' }]],
-  use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  use: { baseURL: `http://localhost:${PORT}/`, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: {
     command: `python3 -m http.server ${PORT}`,
     cwd: '..',
@@ -21,5 +21,7 @@ export default defineConfig({
     // Store screenshots: mobile layout at exactly 1290×2796 (App Store 6.7" / Play phone).
     { name: 'store', use: { browserName: 'chromium', viewport: { width: 430, height: 932 },
         deviceScaleFactor: 3, isMobile: true, hasTouch: true } },
+    // Post-deploy smoke against the LIVE GitHub Pages site (note trailing slash → /maneno/ subpath).
+    { name: 'live', use: { ...devices['Desktop Chrome'], baseURL: 'https://kmunjy.github.io/maneno/' } },
   ],
 });
