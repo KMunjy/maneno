@@ -1,13 +1,13 @@
-/* Mhanga Service Worker — offline-capable PWA
+/* Maneno Service Worker — offline-capable PWA
    Strategy:
      - HTML / navigation requests  → NETWORK-FIRST (so app updates appear
        immediately; falls back to cache only when offline)
      - Everything else (manifest, icons, future assets) → CACHE-FIRST with
        background refresh
    Bump CACHE on every release to evict the previous shell. */
-const CACHE = "maneno-v1";
+const CACHE = "maneno-v2";
 // Relative paths so the SW works whether served at domain root (Vercel/Netlify)
-// or under a subpath (GitHub Pages: /payment-reminder/).
+// or under a subpath (GitHub Pages: /maneno/).
 const SHELL = ["./", "./index.html", "./play.html", "./register.html", "./manifest.json", "./words.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
