@@ -33,6 +33,14 @@
   --csz:clamp(28px,5.5vw,48px);--cgap:2px;
   --cnf:clamp(7px,1.2vw,10px);--cvf:clamp(12px,2.5vw,18px);
 }
+@media (prefers-color-scheme:dark){:root{
+  --bg:#17150f;--bg2:#1f1c15;--surface:#26221a;--surface2:#2f2a20;
+  --border:rgba(240,230,210,0.10);--border2:rgba(240,230,210,0.20);
+  --ink:#efe7d6;--muted:#b3a993;--dim:#8f866f;--accent:#8fb0e6;
+  --shadow:0 6px 22px rgba(0,0,0,0.5);
+  --cw-white:#2b271e;--cw-black:#0b0a07;--cw-line:#0b0a07;--cw-ink:#9fc0f2;
+  --cw-blue:#2c3f5e;--cw-ok:#3b4a2a;--cw-bad:#5a2e24;--cw-pencil:#33405a;--cw-rev:#4d3d22;--cw-master:#34452c;
+}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{min-height:100vh;}
 body{
@@ -865,8 +873,16 @@ const GameConfig={
 GameConfig.load();
 const Profile={
   name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],achievements:[],wordsSolved:0,langsPlayed:[],
-  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history","achievements","wordsSolved","langsPlayed"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20),achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed}));}catch(e){}},
+  load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history","achievements","wordsSolved","langsPlayed","dayStreak","maxDayStreak","lastDaily"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
+  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20),achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed,dayStreak:this.dayStreak||0,maxDayStreak:this.maxDayStreak||0,lastDaily:this.lastDaily||0}));}catch(e){}},
+  recordDaily(){
+    const t=dailySeed(),y=new Date();y.setDate(y.getDate()-1);
+    const ys=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
+    if(this.lastDaily===t)return;
+    this.dayStreak=(this.lastDaily===ys)?(this.dayStreak||0)+1:1;
+    this.maxDayStreak=Math.max(this.maxDayStreak||0,this.dayStreak);
+    this.lastDaily=t;this.save();
+  },
   recordSolve(secs,clean,lang,cx,wordCount){
     this.totalSolved++;
     this.wordsSolved+=(wordCount||0);
@@ -952,6 +968,7 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=0|Math.ran
 const CK=(r,c)=>r+","+c;
 
 /* ── Daily puzzle: date-seeded deterministic shuffle ── */
+function dailyNumber(){return Math.floor((new Date().setHours(0,0,0,0)-new Date(2026,5,1))/864e5)+1;}
 function dailySeed(){const d=new Date();return d.getFullYear()*10000+( d.getMonth()+1)*100+d.getDate();}
 function seededShuffle(arr,seed){
   arr=arr.slice();let s=seed;
@@ -1169,7 +1186,7 @@ function onWin(){
   stopTimer();updateProgress();
   const wordCount=puzzle.placements.length;
   const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
-  Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity,wordCount);updateProfile();
+  Profile.recordSolve(timerSec,cleanSolve,lang.name,GameConfig.complexity,wordCount);if(dailyMode)Profile.recordDaily();updateProfile();
   lastWin={secs:timerSec,mm:m,ss:s,clean:cleanSolve,lang:lang.name,cx:COMPLEXITY_RULES[GameConfig.complexity].label,words:wordCount,daily:dailyMode};
   if(cleanSolve){setStatus(`Wakunda! Clean solve in ${m}:${s} · Streak: ${Profile.streak}`,"win");}
   else{setStatus(`Completed in ${m}:${s}`);}
@@ -1200,8 +1217,9 @@ function buildShareText(){
   if(!lastWin)return "I played Maneno — the Bantu crossword.";
   const star=lastWin.clean?" ★ clean":"";
   return `Maneno — ${lastWin.lang} (${lastWin.cx})\n`+
-         `${lastWin.daily?"Daily puzzle":"Puzzle"}: ${lastWin.words} words in ${lastWin.mm}:${lastWin.ss}${star}\n`+
-         `A crossword in Shona, Swahili & Zulu — https://maneno.loca.lt`;
+         `${lastWin.daily?"Daily #"+dailyNumber():"Puzzle"}: ${lastWin.words} words in ${lastWin.mm}:${lastWin.ss}${star}\n`+
+         `${"🟩".repeat(Math.min(lastWin.words,10))}${(Profile.dayStreak||0)>1?" 🔥"+Profile.dayStreak+" days":""}\n`+
+         `Play free: https://kmunjy.github.io/maneno/`;
 }
 async function shareResult(){
   const text=buildShareText();
@@ -1282,7 +1300,7 @@ function renderCatStrip(){
    ============================================================ */
 function updateProfile(){
   document.getElementById("pcName").textContent=Profile.name||"Player";
-  document.getElementById("pcStreak").textContent=Profile.streak>0?`🔥${Profile.streak}`:"";
+  document.getElementById("pcStreak").textContent=(Profile.dayStreak||0)>0?`🔥${Profile.dayStreak}`:"";
   if(document.getElementById("profileModal").classList.contains("open"))openProfile();
 }
 function openProfile(){
