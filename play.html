@@ -41,6 +41,11 @@
   --cw-white:#2b271e;--cw-black:#0b0a07;--cw-line:#0b0a07;--cw-ink:#9fc0f2;
   --cw-blue:#2c3f5e;--cw-ok:#3b4a2a;--cw-bad:#5a2e24;--cw-pencil:#33405a;--cw-rev:#4d3d22;--cw-master:#34452c;
 }}
+.sq.live.dg{box-shadow:inset 0 0 0 2px var(--accent3);}
+.sq.dg::after{content:"";position:absolute;right:3px;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--accent3);}
+.sq.live.pr{background:color-mix(in srgb,var(--accent3) 22%,var(--cw-white));}
+.sq.live.pr.pl{box-shadow:inset -3px 0 0 0 var(--accent3);}
+.sq.live.pr.pt{box-shadow:inset 0 -3px 0 0 var(--accent3);}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
 html,body{min-height:100vh;}
 body{
@@ -453,6 +458,7 @@ label.toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(4
   <!-- Primary actions in the row; secondary tools live in the ⋯ More menu (decluttered) -->
   <div class="toolbar" role="toolbar" aria-label="Puzzle controls">
     <select id="lang" aria-label="Language"></select>
+    <select id="modeSel" aria-label="Square mode" title="How two-letter sounds like CH appear"><option value="sounds">Sounds: CH = 1 square</option><option value="letters">Letters: C + H</option></select>
     <button id="btnNew" class="primary">New Puzzle</button>
     <button id="btnCheck">Check</button>
     <button id="btnHint">Hint ▾</button>
@@ -987,9 +993,12 @@ function wordsForPuzzle(data,cat){
 /* ============================================================
    5. NEW PUZZLE
    ============================================================ */
+let pairCells=new Map();
+function letterMode(){try{return localStorage.getItem("maneno_v1_mode")==="letters";}catch(e){return false;}}
 function newPuzzle(langName,forceDaily=false){
   const data=LANGUAGES[langName];
-  lang=new Language(data.config);
+  const fullLang=new Language(data.config);
+  lang=letterMode()?new Language(Object.assign({},data.config,{atomic_graphemes:[]})):fullLang;
   const rules=COMPLEXITY_RULES[GameConfig.complexity];
   dailyMode=forceDaily;
   const words=wordsForPuzzle(data,activeCat);
@@ -1002,6 +1011,12 @@ function newPuzzle(langName,forceDaily=false){
   const rs=[...puzzle.cells.keys()].map(k=>+k.split(",")[0]);
   const cs=[...puzzle.cells.keys()].map(k=>+k.split(",")[1]);
   bounds={rmin:Math.min(...rs),rmax:Math.max(...rs),cmin:Math.min(...cs),cmax:Math.max(...cs)};
+  pairCells=new Map();
+  if(letterMode())for(const p of puzzle.placements){
+    const[dr,dc]=p.dir===AC?[0,1]:[1,0];let i=0;
+    for(const g of fullLang.tokenize(p.e[0])){if(g.length>1)for(let j=0;j<g.length;j++)pairCells.set(CK(p.row+dr*(i+j),p.col+dc*(i+j)),j<g.length-1?(p.dir===AC?"pl":"pt"):"");i+=g.length;}
+  }
+  if(!letterMode()&&!localStorage.getItem("maneno_v1_dgtip")){try{localStorage.setItem("maneno_v1_dgtip","1");}catch(e){}setTimeout(()=>toast("Tip: sounds like CH or MB share one square (marked with a dot). Switch to Letters mode anytime."),600);}
   guesses=new Map();pencilSet=new Set();revealed=new Set();hintsUsed=0;
   learnMastery=new Map();learnStudyPhase=GameConfig.learnMode;
   for(const k of puzzle.cells.keys()){
@@ -1057,6 +1072,8 @@ function render(){
       if(pencilSet.has(k)&&g&&!isCur&&!inWd)cl.push("pnc");
       if(autochecking&&g&&!isRev){if(g===puzzle.cells.get(k)){if(!isCur&&!inWd)cl.push("ok");}else cl.push("bad");}
       if(isRev&&!isCur&&!inWd)cl.push("rev");
+      if(!letterMode()&&puzzle.cells.get(k).length>1)cl.push("dg");
+      if(pairCells.has(k)){cl.push("pr");if(pairCells.get(k))cl.push(pairCells.get(k));}
       const num=nm.get(k);
       html+=`<div class="${cl.join(" ")}" data-k="${k}" role="gridcell" tabindex="${isCur?0:-1}" aria-label="${num?`${num} `:""}${g||"empty"}">`+(num?`<span class="cn">${num}</span>`:"")+`<span class="lv">${g.toUpperCase()}</span></div>`;
     }
@@ -1217,7 +1234,7 @@ function buildShareText(){
   if(!lastWin)return "I played Maneno — the Bantu crossword.";
   const star=lastWin.clean?" ★ clean":"";
   return `Maneno — ${lastWin.lang} (${lastWin.cx})\n`+
-         `${lastWin.daily?"Daily #"+dailyNumber():"Puzzle"}: ${lastWin.words} words in ${lastWin.mm}:${lastWin.ss}${star}\n`+
+         `${lastWin.daily?"Daily #"+dailyNumber()+(letterMode()?" · Letters":" · Sounds"):"Puzzle"}: ${lastWin.words} words in ${lastWin.mm}:${lastWin.ss}${star}\n`+
          `${"🟩".repeat(Math.min(lastWin.words,10))}${(Profile.dayStreak||0)>1?" 🔥"+Profile.dayStreak+" days":""}\n`+
          `Play free: https://kmunjy.github.io/maneno/`;
 }
@@ -1260,7 +1277,7 @@ function tick(){
    12. KEYPAD
    ============================================================ */
 function renderKeypad(){
-  const vowels=["a","e","i","o","u"],cons="bdfghjklmnprstvwyz".split(""),digs=[...lang.ordered].sort();
+  const vowels=["a","e","i","o","u"],cons=(letterMode()?"bcdfghjklmnpqrstvwxyz":"bdfghjklmnprstvwyz").split(""),digs=[...lang.ordered].sort();
   const kp=document.getElementById("keypad");
   const mk=(lbl,cls="")=>`<button class="${cls}" data-g="${lbl}" aria-label="${lbl}">${lbl.toUpperCase()}</button>`;
   kp.innerHTML=vowels.map(v=>mk(v)).join("")+cons.map(c=>mk(c)).join("")+digs.map(d=>mk(d,"kdi")).join("")+mk("⌫","kutil")+mk("→","kutil");
@@ -1381,6 +1398,7 @@ function setStatus(msg,cls=""){const el=document.getElementById("statusMsg");el.
 /* ============================================================
    18. WIRING
    ============================================================ */
+{const ms=document.getElementById("modeSel");ms.value=letterMode()?"letters":"sounds";ms.addEventListener("change",()=>{try{localStorage.setItem("maneno_v1_mode",ms.value);}catch(e){}newPuzzle(document.getElementById("lang").value,dailyMode);});}
 document.getElementById("btnNew").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value));
 document.getElementById("btnDaily").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value,true));
 document.getElementById("btnClear").addEventListener("click",()=>{for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);}pending="";cleanSolve=true;resetTimer();startTimer();updateProgress();render();syncClues();setStatus("Cleared.","info");});
