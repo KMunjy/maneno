@@ -783,7 +783,7 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
   const cands=maxLen<=4?sorted.slice().reverse().slice(0,wordTarget*2):sorted.slice(0,wordTarget*2);
   const toks=cands.length>=4?cands:pool;
   toks.sort((a,b)=>b.t.length-a.t.length);
-  const cells=new Map(),placements=[];
+  const cells=new Map(),placements=[],used=new Map(); // used: cell -> directions already passing through it
   const K=(r,c)=>r+","+c;
   function canPlace(tok,row,col,dir){
     let x=0;const[dr,dc]=dir===AC?[0,1]:[1,0];
@@ -791,12 +791,12 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
     if(cells.has(K(row+dr*tok.length,col+dc*tok.length)))return -1;
     for(let i=0;i<tok.length;i++){
       const r=row+dr*i,c=col+dc*i,ex=cells.get(K(r,c));
-      if(ex!==undefined){if(ex!==tok[i])return -1;x++;}
+      if(ex!==undefined){if(ex!==tok[i])return -1;if(used.get(K(r,c)).has(dir))return -1; /* no word inside/overlapping another in the same direction */x++;}
       else{const[a,b]=dir===AC?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];if(cells.has(K(a[0],a[1]))||cells.has(K(b[0],b[1])))return -1;}
     }
     return placements.length&&x===0?-1:x;
   }
-  function commit(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];p.tok.forEach((t,i)=>cells.set(K(p.row+dr*i,p.col+dc*i),t));placements.push(p);}
+  function commit(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];p.tok.forEach((t,i)=>{const k=K(p.row+dr*i,p.col+dc*i);cells.set(k,t);(used.get(k)||used.set(k,new Set()).get(k)).add(p.dir);});placements.push(p);}
   function bestPlace(e,tok){
     const cds=[];
     for(const[k,gt]of cells){const[gr,gc]=k.split(",").map(Number);for(let i=0;i<tok.length;i++){if(tok[i]!==gt)continue;for(const dir of[AC,DN]){const row=dir===AC?gr:gr-i,col=dir===AC?gc-i:gc;const sc=canPlace(tok,row,col,dir);if(sc<0)continue;const cr=dir===AC?row:row+(tok.length>>1),cc=dir===AC?col+(tok.length>>1):col;cds.push({sc,cp:-(Math.abs(cr)+Math.abs(cc)),p:{e,tok,row,col,dir}});}}}
@@ -805,10 +805,11 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
   }
   commit({e:toks[0].e,tok:toks[0].t,row:0,col:0,dir:AC});
   let rem=toks.slice(1),progress=true;
-  while(rem.length&&progress){progress=false;const left=[];for(const{e,t}of rem){const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
+  /* stop at the player's word count (it was an implicit 2x cap via cands) */
+  while(rem.length&&progress&&placements.length<wordTarget){progress=false;const left=[];for(const{e,t}of rem){if(placements.length>=wordTarget){left.push({e,t});continue;}const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
   if(placements.length<Math.min(4,wordTarget)&&attempt<6){
     const reshuffled=seed==null?shuffle(entries):seededShuffle(entries,seed+attempt+1);
-    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed);
+    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed,minLen); /* keep the difficulty band on retry */
   }
   const starts=new Map();for(const p of placements){const k=K(p.row,p.col);if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
   [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;}).forEach((k,i)=>starts.get(k).forEach(p=>p.num=i+1));
@@ -968,7 +969,9 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=0|Math.ran
 const CK=(r,c)=>r+","+c;
 
 /* ── Daily puzzle: date-seeded deterministic shuffle ── */
-function dailyNumber(){return Math.floor((new Date().setHours(0,0,0,0)-new Date(2026,5,1))/864e5)+1;}
+function dailyNumber(){return Math.round((new Date().setHours(0,0,0,0)-new Date(2026,5,1))/864e5)+1;} /* round: DST days are 23h/25h */
+/* The Daily is generated with fixed settings so everyone gets the same grid (difficulty only changes hints/checking). */
+const DAILY={complexity:"intermediate",wordTarget:8,cat:"all"};
 function dailySeed(){const d=new Date();return d.getFullYear()*10000+( d.getMonth()+1)*100+d.getDate();}
 function seededShuffle(arr,seed){
   arr=arr.slice();let s=seed;
@@ -978,9 +981,11 @@ function seededShuffle(arr,seed){
 }
 
 /* ── Category-filtered word list (ordering handled by generateBest) ── */
-function wordsForPuzzle(data,cat){
+function wordsForPuzzle(data,cat,lang,rules){
   let words=cat==="all"?data.words:data.words.filter(w=>w[4]===cat);
-  if(words.length<4)words=data.words; // ensure enough words to fill a dense grid
+  /* count only words that fit the difficulty band; if the category is too thin, drop the category, not the band */
+  const fits=w=>{if(!lang||!rules)return true;const n=lang.tokenize(w[0]).length;return n<=rules.maxLen&&n>=(rules.minLen||0);};
+  if(words.filter(fits).length<4)words=data.words; // ensure enough words to fill a dense grid
   return words;
 }
 
@@ -992,10 +997,11 @@ function newPuzzle(langName,forceDaily=false){
   lang=new Language(data.config);
   const rules=COMPLEXITY_RULES[GameConfig.complexity];
   dailyMode=forceDaily;
-  const words=wordsForPuzzle(data,activeCat);
+  const words=wordsForPuzzle(data,forceDaily?DAILY.cat:activeCat,lang,forceDaily?COMPLEXITY_RULES[DAILY.complexity]:rules);
+  const gen=forceDaily?COMPLEXITY_RULES[DAILY.complexity]:rules;
   /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
   const seed=forceDaily?dailySeed():null;
-  puzzle=generateBest(words,lang,GameConfig.wordTarget,rules.maxLen,forceDaily?10:14,seed,rules.minLen||0);
+  puzzle=generateBest(words,lang,forceDaily?DAILY.wordTarget:GameConfig.wordTarget,gen.maxLen,forceDaily?10:14,seed,gen.minLen||0);
   /* Guard: empty generation would make bounds Infinity and freeze render() */
   if(!puzzle||!puzzle.cells.size){setStatus("Couldn't build a puzzle — try a different category or fewer words.","err");return;}
   /* Set grid bounds from placed cells */
@@ -1122,7 +1128,11 @@ function composeKey(k){
   if(canGrow){pending=cand;guesses.set(cur,cand);render();syncClues();return;}
   if(isG){commitGrapheme(cand,cur);pending="";advance(1);schedRender();return;}
   if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
-  commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
+  /* pending is a prefix of a longer grapheme but not a grapheme itself (Zulu "nk" of "nkq", "nt" of "ntsh"):
+     split it into real graphemes, one per square, then handle the new key */
+  const parts=lang.tokenize(pending);pending="";
+  for(const g of parts){const kk=wordKeys(active.placement),at=active.idx;commitGrapheme(g,kk[at]);advance(1);if(active.idx===at)break;}
+  render();composeKey(k);
 }
 let _solvedSet=new Set(),_lastFilledKey=null;
 function flashCells(words){
