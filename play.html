@@ -968,7 +968,9 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=0|Math.ran
 const CK=(r,c)=>r+","+c;
 
 /* ── Daily puzzle: date-seeded deterministic shuffle ── */
-function dailyNumber(){return Math.floor((new Date().setHours(0,0,0,0)-new Date(2026,5,1))/864e5)+1;}
+function dailyNumber(){return Math.round((new Date().setHours(0,0,0,0)-new Date(2026,5,1))/864e5)+1;} /* round: DST days are 23h/25h */
+/* The Daily is generated with fixed settings so everyone gets the same grid (difficulty only changes hints/checking). */
+const DAILY={complexity:"intermediate",wordTarget:8,cat:"all"};
 function dailySeed(){const d=new Date();return d.getFullYear()*10000+( d.getMonth()+1)*100+d.getDate();}
 function seededShuffle(arr,seed){
   arr=arr.slice();let s=seed;
@@ -992,10 +994,11 @@ function newPuzzle(langName,forceDaily=false){
   lang=new Language(data.config);
   const rules=COMPLEXITY_RULES[GameConfig.complexity];
   dailyMode=forceDaily;
-  const words=wordsForPuzzle(data,activeCat);
+  const words=wordsForPuzzle(data,forceDaily?DAILY.cat:activeCat);
+  const gen=forceDaily?COMPLEXITY_RULES[DAILY.complexity]:rules;
   /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
   const seed=forceDaily?dailySeed():null;
-  puzzle=generateBest(words,lang,GameConfig.wordTarget,rules.maxLen,forceDaily?10:14,seed,rules.minLen||0);
+  puzzle=generateBest(words,lang,forceDaily?DAILY.wordTarget:GameConfig.wordTarget,gen.maxLen,forceDaily?10:14,seed,gen.minLen||0);
   /* Guard: empty generation would make bounds Infinity and freeze render() */
   if(!puzzle||!puzzle.cells.size){setStatus("Couldn't build a puzzle — try a different category or fewer words.","err");return;}
   /* Set grid bounds from placed cells */
