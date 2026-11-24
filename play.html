@@ -783,7 +783,7 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
   const cands=maxLen<=4?sorted.slice().reverse().slice(0,wordTarget*2):sorted.slice(0,wordTarget*2);
   const toks=cands.length>=4?cands:pool;
   toks.sort((a,b)=>b.t.length-a.t.length);
-  const cells=new Map(),placements=[];
+  const cells=new Map(),placements=[],used=new Map(); // used: cell -> directions already passing through it
   const K=(r,c)=>r+","+c;
   function canPlace(tok,row,col,dir){
     let x=0;const[dr,dc]=dir===AC?[0,1]:[1,0];
@@ -791,12 +791,12 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
     if(cells.has(K(row+dr*tok.length,col+dc*tok.length)))return -1;
     for(let i=0;i<tok.length;i++){
       const r=row+dr*i,c=col+dc*i,ex=cells.get(K(r,c));
-      if(ex!==undefined){if(ex!==tok[i])return -1;x++;}
+      if(ex!==undefined){if(ex!==tok[i])return -1;if(used.get(K(r,c)).has(dir))return -1; /* no word inside/overlapping another in the same direction */x++;}
       else{const[a,b]=dir===AC?[[r-1,c],[r+1,c]]:[[r,c-1],[r,c+1]];if(cells.has(K(a[0],a[1]))||cells.has(K(b[0],b[1])))return -1;}
     }
     return placements.length&&x===0?-1:x;
   }
-  function commit(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];p.tok.forEach((t,i)=>cells.set(K(p.row+dr*i,p.col+dc*i),t));placements.push(p);}
+  function commit(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];p.tok.forEach((t,i)=>{const k=K(p.row+dr*i,p.col+dc*i);cells.set(k,t);(used.get(k)||used.set(k,new Set()).get(k)).add(p.dir);});placements.push(p);}
   function bestPlace(e,tok){
     const cds=[];
     for(const[k,gt]of cells){const[gr,gc]=k.split(",").map(Number);for(let i=0;i<tok.length;i++){if(tok[i]!==gt)continue;for(const dir of[AC,DN]){const row=dir===AC?gr:gr-i,col=dir===AC?gc-i:gc;const sc=canPlace(tok,row,col,dir);if(sc<0)continue;const cr=dir===AC?row:row+(tok.length>>1),cc=dir===AC?col+(tok.length>>1):col;cds.push({sc,cp:-(Math.abs(cr)+Math.abs(cc)),p:{e,tok,row,col,dir}});}}}
