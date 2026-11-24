@@ -874,7 +874,7 @@ GameConfig.load();
 const Profile={
   name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],achievements:[],wordsSolved:0,langsPlayed:[],
   load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history","achievements","wordsSolved","langsPlayed","dayStreak","maxDayStreak","lastDaily"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20),achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed,dayStreak:this.dayStreak||0,maxDayStreak:this.maxDayStreak||0,lastDaily:this.lastDaily||0}));}catch(e){}},
+  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(0,20) /* newest-first: keep the newest 20 */,achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed,dayStreak:this.dayStreak||0,maxDayStreak:this.maxDayStreak||0,lastDaily:this.lastDaily||0}));}catch(e){}},
   recordDaily(){
     const t=dailySeed(),y=new Date();y.setDate(y.getDate()-1);
     const ys=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
