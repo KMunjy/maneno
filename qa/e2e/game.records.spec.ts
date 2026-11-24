@@ -34,3 +34,50 @@ test('Clear after a hint does not make the solve clean again', async ({ page }) 
   // @ts-ignore
   expect(await page.evaluate(() => cleanSolve)).toBe(false);
 });
+
+test('Reveal, then Clear, then retyping still does not record a solve or streak', async ({ page }) => {
+  await startGame(page);
+  await page.locator('#btnMore').click();
+  await page.locator('#btnDaily').click();
+  // @ts-ignore
+  await page.evaluate(async () => { revealPuzzle(); await new Promise(r => setTimeout(r, 150)); });
+  await page.locator('#btnMore').click();
+  await page.locator('#btnClear').click();
+  // @ts-ignore
+  await page.evaluate(async () => { puzzle.cells.forEach((v: string, k: string) => guesses.set(k, v)); schedRender(); await new Promise(r => setTimeout(r, 200)); });
+  const p = await prof(page);
+  expect(p.totalSolved || 0).toBe(0);
+  expect(p.dayStreak || 0).toBe(0);
+});
+
+test('Expert: Reveal puzzle is refused once the 1-hint budget is used', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('maneno_v1_config', JSON.stringify({ complexity: 'expert' })));
+  await startGame(page);
+  const res = await page.evaluate(async () => {
+    // @ts-ignore
+    active = { placement: puzzle.placements[0], idx: 0 }; revealLetter();
+    // @ts-ignore
+    revealPuzzle(); await new Promise(r => setTimeout(r, 150));
+    // @ts-ignore
+    return { hintsUsed, gaveUp, empty: [...guesses.values()].filter((v: string) => !v).length, status: document.getElementById('statusMsg')!.textContent };
+  });
+  expect(res.hintsUsed).toBe(1);
+  expect(res.gaveUp).toBe(false);
+  expect(res.empty).toBeGreaterThan(0);
+  expect(res.status).toContain('No hints left');
+});
+
+test('Expert: countdown timeout still reveals the puzzle after the hint budget is used', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('maneno_v1_config', JSON.stringify({ complexity: 'expert', timerMode: 'down', countdownMins: 1 })));
+  await startGame(page);
+  const res = await page.evaluate(async () => {
+    // @ts-ignore
+    active = { placement: puzzle.placements[0], idx: 0 }; revealLetter(); timerSec = 1;
+    await new Promise(r => setTimeout(r, 2500));
+    // @ts-ignore
+    return { gameOver, empty: [...guesses.values()].filter((v: string) => !v).length };
+  });
+  expect(res.gameOver).toBe(true);
+  expect(res.empty).toBe(0);
+  expect((await prof(page)).totalSolved || 0).toBe(0);
+});
