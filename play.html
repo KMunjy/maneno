@@ -875,7 +875,7 @@ GameConfig.load();
 const Profile={
   name:"Player",totalSolved:0,streak:0,cleanSolves:0,bestSecs:null,history:[],achievements:[],wordsSolved:0,langsPlayed:[],
   load(){try{const d=JSON.parse(localStorage.getItem(PROFKEY)||"{}");["name","totalSolved","streak","cleanSolves","bestSecs","history","achievements","wordsSolved","langsPlayed","dayStreak","maxDayStreak","lastDaily"].forEach(k=>{if(k in d)this[k]=d[k];});}catch(e){}return this;},
-  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(-20),achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed,dayStreak:this.dayStreak||0,maxDayStreak:this.maxDayStreak||0,lastDaily:this.lastDaily||0}));}catch(e){}},
+  save(){try{localStorage.setItem(PROFKEY,JSON.stringify({name:this.name,totalSolved:this.totalSolved,streak:this.streak,cleanSolves:this.cleanSolves,bestSecs:this.bestSecs,history:this.history.slice(0,20) /* newest-first: keep the newest 20 */,achievements:this.achievements,wordsSolved:this.wordsSolved,langsPlayed:this.langsPlayed,dayStreak:this.dayStreak||0,maxDayStreak:this.maxDayStreak||0,lastDaily:this.lastDaily||0}));}catch(e){}},
   recordDaily(){
     const t=dailySeed(),y=new Date();y.setDate(y.getDate()-1);
     const ys=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
@@ -964,6 +964,7 @@ let pending="",renderTimer=null;
 let gameOver=false; // set on countdown timeout; prevents a timed-out puzzle being recorded as a solve
 let activeCat="all"; // current category filter
 let dailyMode=false; // playing the daily puzzle
+let gaveUp=false; // "Reveal puzzle" used: finishing is not a solve
 
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 const CK=(r,c)=>r+","+c;
@@ -1014,7 +1015,7 @@ function newPuzzle(langName,forceDaily=false){
     guesses.set(k,"");learnMastery.set(k,0);
     if(GameConfig.learnMode&&learnStudyPhase)guesses.set(k,puzzle.cells.get(k));
   }
-  active=null;pending="";cleanSolve=true;gameOver=false;_solvedSet=new Set();_lastFilledKey=null;
+  active=null;pending="";cleanSolve=true;gameOver=false;gaveUp=false;_solvedSet=new Set();_lastFilledKey=null;
   autochecking=rules.autoCheckDefault;
   document.getElementById("cbAuto").checked=autochecking;
   document.getElementById("lblAuto").classList.toggle("on",autochecking);
@@ -1185,14 +1186,15 @@ function checkManual(){
 function hintAllowed(){const r=COMPLEXITY_RULES[GameConfig.complexity];if(hintsUsed>=r.hintBudget){setStatus(`No hints left on ${r.label} difficulty.`,"err");return false;}return true;}
 function revealLetter(){if(!active){setStatus("Select a cell.");return;}if(!hintAllowed())return;const k=wordKeys(active.placement)[active.idx];guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);hintsUsed++;cleanSolve=false;SFX.hint();updateHintBudgetBadge();advance(1);schedRender();}
 function revealWord(){if(!active){setStatus("Select a word.");return;}if(!hintAllowed())return;wordKeys(active.placement).forEach(k=>{guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);});hintsUsed++;cleanSolve=false;SFX.hint();updateHintBudgetBadge();schedRender();}
-function revealPuzzle(){for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();setStatus("Puzzle revealed.");}
+function revealPuzzle(force){if(!force&&!hintAllowed())return; /* Expert hint budget applies; countdown timeout forces it */gaveUp=true;for(const k of guesses.keys()){guesses.set(k,puzzle.cells.get(k));pencilSet.delete(k);revealed.add(k);}hintsUsed++;cleanSolve=false;updateHintBudgetBadge();schedRender();setStatus("Puzzle revealed.");}
 
 /* ============================================================
    10. WIN
    ============================================================ */
 let lastWin=null; // {secs,clean,lang,cx,words} for the celebration screen + share
 function onWin(){
-  if(gameOver){render();syncClues();return;} // timed-out: puzzle revealed, not a real solve — don't record
+  if(gameOver||gaveUp){stopTimer();render();syncClues();return;} // timed out or revealed: not a real solve — don't record
+  if(learnStudyPhase){render();syncClues();return;} // Learn study phase shows the answers: never a solve
   stopTimer();updateProgress();
   const wordCount=puzzle.placements.length;
   const m=String(Math.floor(timerSec/60)).padStart(2,"0"),s=String(timerSec%60).padStart(2,"0");
@@ -1256,7 +1258,7 @@ function confetti(){
    11. TIMER
    ============================================================ */
 function resetTimer(){timerSec=GameConfig.timerMode==="down"?GameConfig.countdownMins*60:0;stopTimer();tick();document.getElementById("timer").classList.remove("warn","danger");}
-function startTimer(){if(!timerOn||GameConfig.timerMode==="off")return;timerInterval=setInterval(()=>{if(GameConfig.timerMode==="down"){timerSec--;if(timerSec<=0){timerSec=0;tick();stopTimer();gameOver=true;revealPuzzle();setStatus("⏰ Time's up — puzzle revealed.","err");return;}}else timerSec++;tick();},1000);}
+function startTimer(){if(!timerOn||GameConfig.timerMode==="off")return;timerInterval=setInterval(()=>{if(GameConfig.timerMode==="down"){timerSec--;if(timerSec<=0){timerSec=0;tick();stopTimer();gameOver=true;revealPuzzle(true);setStatus("⏰ Time's up — puzzle revealed.","err");return;}}else timerSec++;tick();},1000);}
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
 function tick(){
   const el=document.getElementById("timer");
@@ -1393,7 +1395,7 @@ function setStatus(msg,cls=""){const el=document.getElementById("statusMsg");el.
    ============================================================ */
 document.getElementById("btnNew").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value));
 document.getElementById("btnDaily").addEventListener("click",()=>newPuzzle(document.getElementById("lang").value,true));
-document.getElementById("btnClear").addEventListener("click",()=>{for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);}pending="";cleanSolve=true;resetTimer();startTimer();updateProgress();render();syncClues();setStatus("Cleared.","info");});
+document.getElementById("btnClear").addEventListener("click",()=>{for(const k of guesses.keys()){guesses.set(k,"");pencilSet.delete(k);revealed.delete(k);}pending="";cleanSolve=hintsUsed===0;/* gaveUp survives Clear: a revealed puzzle can never be recorded */resetTimer();startTimer();updateProgress();render();syncClues();setStatus("Cleared.","info");});
 document.getElementById("btnCheck").addEventListener("click",checkManual);
 document.getElementById("btnPrint").addEventListener("click",printPuzzle);
 document.getElementById("cbAuto").addEventListener("change",function(){autochecking=this.checked;document.getElementById("lblAuto").classList.toggle("on",this.checked);render();});
