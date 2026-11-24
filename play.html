@@ -805,10 +805,11 @@ function generate(entries,lang,attempt=0,wordTarget=8,maxLen=99,seed=null,minLen
   }
   commit({e:toks[0].e,tok:toks[0].t,row:0,col:0,dir:AC});
   let rem=toks.slice(1),progress=true;
-  while(rem.length&&progress){progress=false;const left=[];for(const{e,t}of rem){const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
+  /* stop at the player's word count (it was an implicit 2x cap via cands) */
+  while(rem.length&&progress&&placements.length<wordTarget){progress=false;const left=[];for(const{e,t}of rem){if(placements.length>=wordTarget){left.push({e,t});continue;}const p=bestPlace(e,t);if(p){commit(p);progress=true;}else left.push({e,t});}rem=left;}
   if(placements.length<Math.min(4,wordTarget)&&attempt<6){
     const reshuffled=seed==null?shuffle(entries):seededShuffle(entries,seed+attempt+1);
-    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed);
+    return generate(reshuffled,lang,attempt+1,wordTarget,maxLen,seed,minLen); /* keep the difficulty band on retry */
   }
   const starts=new Map();for(const p of placements){const k=K(p.row,p.col);if(!starts.has(k))starts.set(k,[]);starts.get(k).push(p);}
   [...starts.keys()].sort((a,b)=>{const[ar,ac]=a.split(",").map(Number),[br,bc]=b.split(",").map(Number);return ar-br||ac-bc;}).forEach((k,i)=>starts.get(k).forEach(p=>p.num=i+1));
@@ -980,9 +981,11 @@ function seededShuffle(arr,seed){
 }
 
 /* ── Category-filtered word list (ordering handled by generateBest) ── */
-function wordsForPuzzle(data,cat){
+function wordsForPuzzle(data,cat,lang,rules){
   let words=cat==="all"?data.words:data.words.filter(w=>w[4]===cat);
-  if(words.length<4)words=data.words; // ensure enough words to fill a dense grid
+  /* count only words that fit the difficulty band; if the category is too thin, drop the category, not the band */
+  const fits=w=>{if(!lang||!rules)return true;const n=lang.tokenize(w[0]).length;return n<=rules.maxLen&&n>=(rules.minLen||0);};
+  if(words.filter(fits).length<4)words=data.words; // ensure enough words to fill a dense grid
   return words;
 }
 
@@ -994,7 +997,7 @@ function newPuzzle(langName,forceDaily=false){
   lang=new Language(data.config);
   const rules=COMPLEXITY_RULES[GameConfig.complexity];
   dailyMode=forceDaily;
-  const words=wordsForPuzzle(data,forceDaily?DAILY.cat:activeCat);
+  const words=wordsForPuzzle(data,forceDaily?DAILY.cat:activeCat,lang,forceDaily?COMPLEXITY_RULES[DAILY.complexity]:rules);
   const gen=forceDaily?COMPLEXITY_RULES[DAILY.complexity]:rules;
   /* OPTION 1 — dense pack: best-of-N. Daily uses a date seed for a shared, reproducible grid. */
   const seed=forceDaily?dailySeed():null;
