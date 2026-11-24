@@ -33,6 +33,10 @@ test('Letters mode: one letter per square, valid grids, pairs highlighted (all l
           if (m.length !== 1) out.push(`${L}: run ${dir}@${k} len ${n} has ${m.length} words`);
         }
       }
+      // every square can be typed on the on-screen keypad
+      const keys = new Set([...document.querySelectorAll('#keypad button')].map(b => (b as HTMLElement).dataset.g));
+      // @ts-ignore
+      for (const v of new Set(C.values())) if (!keys.has(v)) out.push(`${L}: no keypad key for "${v}"`);
       // pair highlighting matches words that contain a multi-letter sound in Sounds mode
       // @ts-ignore
       const full = new Language(LANGUAGES[L].config);
@@ -58,4 +62,17 @@ test('Letters mode: Daily is the same whatever the player settings', async ({ br
   const a = await lettersDaily(browser, { complexity: 'intermediate', wordTarget: 8 });
   const b = await lettersDaily(browser, { complexity: 'expert', wordTarget: 12 });
   expect(b).toBe(a);
+});
+
+test("Letters mode: Swahili ng'ombe apostrophe square has a keypad key", async ({ page }) => {
+  await letters()({ page });
+  await startGame(page);
+  const ok = await page.evaluate(() => {
+    // @ts-ignore
+    lang = new Language(Object.assign({}, LANGUAGES.Swahili.config, { atomic_graphemes: [] }));
+    // @ts-ignore
+    const tok = lang.tokenize("ng'ombe"); puzzle.cells.set('900,0', tok[2]); renderKeypad();
+    return [...document.querySelectorAll('#keypad button')].some(b => (b as HTMLElement).dataset.g === "'");
+  });
+  expect(ok).toBe(true);
 });

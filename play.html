@@ -1294,7 +1294,9 @@ function renderKeypad(){
   const vowels=["a","e","i","o","u"],cons=(letterMode()?"bcdfghjklmnpqrstvwxyz":"bdfghjklmnprstvwyz").split(""),digs=[...lang.ordered].sort();
   const kp=document.getElementById("keypad");
   const mk=(lbl,cls="")=>`<button class="${cls}" data-g="${lbl}" aria-label="${lbl}">${lbl.toUpperCase()}</button>`;
-  kp.innerHTML=vowels.map(v=>mk(v)).join("")+cons.map(c=>mk(c)).join("")+digs.map(d=>mk(d,"kdi")).join("")+mk("⌫","kutil")+mk("→","kutil");
+  /* any square value not covered above (e.g. the apostrophe of Swahili ng'ombe in Letters mode) gets its own key */
+  const extra=puzzle?[...new Set(puzzle.cells.values())].filter(g=>!vowels.includes(g)&&!cons.includes(g)&&!digs.includes(g)).sort():[];
+  kp.innerHTML=vowels.map(v=>mk(v)).join("")+cons.map(c=>mk(c)).join("")+digs.map(d=>mk(d,"kdi")).join("")+extra.map(x=>mk(x,"kdi")).join("")+mk("⌫","kutil")+mk("→","kutil");
   kp.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{const g=b.dataset.g;if(g==="⌫")backspace();else if(g==="→"){pending="";advance(1);render();syncClues();}else typeGrapheme(g.toLowerCase());}));
 }
 
