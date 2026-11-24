@@ -5,7 +5,7 @@
      - Everything else (manifest, icons, future assets) → CACHE-FIRST with
        background refresh
    Bump CACHE on every release to evict the previous shell. */
-const CACHE = "maneno-v4";
+const CACHE = "maneno-v5";
 // Relative paths so the SW works whether served at domain root (Vercel/Netlify)
 // or under a subpath (GitHub Pages: /maneno/).
 const SHELL = ["./", "./index.html", "./play.html", "./register.html", "./manifest.json", "./words.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
@@ -48,7 +48,8 @@ self.addEventListener("fetch", e => {
   e.respondWith(
     caches.match(e.request).then(cached => {
       const net = fetch(e.request).then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        // clone synchronously: the page may consume the body before caches.open() resolves
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
         return res;
       }).catch(() => cached);
       return cached || net;
