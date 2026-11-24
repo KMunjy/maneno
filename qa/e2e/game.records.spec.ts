@@ -57,9 +57,10 @@ test('Expert: Reveal puzzle is refused once the 1-hint budget is used', async ({
     // @ts-ignore
     active = { placement: puzzle.placements[0], idx: 0 }; revealLetter();
     // @ts-ignore
-    revealPuzzle(); await new Promise(r => setTimeout(r, 150));
+    revealPuzzle(); const status = document.getElementById('statusMsg')!.textContent; // read before the pending re-render rewrites it
+    await new Promise(r => setTimeout(r, 150));
     // @ts-ignore
-    return { hintsUsed, gaveUp, empty: [...guesses.values()].filter((v: string) => !v).length, status: document.getElementById('statusMsg')!.textContent };
+    return { hintsUsed, gaveUp, empty: [...guesses.values()].filter((v: string) => !v).length, status };
   });
   expect(res.hintsUsed).toBe(1);
   expect(res.gaveUp).toBe(false);
