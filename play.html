@@ -1122,7 +1122,11 @@ function composeKey(k){
   if(canGrow){pending=cand;guesses.set(cur,cand);render();syncClues();return;}
   if(isG){commitGrapheme(cand,cur);pending="";advance(1);schedRender();return;}
   if(pending===""){commitGrapheme(k,cur);advance(1);schedRender();return;}
-  commitGrapheme(pending,cur);pending="";advance(1);render();composeKey(k);
+  /* pending is a prefix of a longer grapheme but not a grapheme itself (Zulu "nk" of "nkq", "nt" of "ntsh"):
+     split it into real graphemes, one per square, then handle the new key */
+  const parts=lang.tokenize(pending);pending="";
+  for(const g of parts){const kk=wordKeys(active.placement),at=active.idx;commitGrapheme(g,kk[at]);advance(1);if(active.idx===at)break;}
+  render();composeKey(k);
 }
 let _solvedSet=new Set(),_lastFilledKey=null;
 function flashCells(words){
