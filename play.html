@@ -1029,6 +1029,8 @@ function newPuzzle(langName,forceDaily=false){
 }
 
 /* ── helpers ── */
+/* A clue must not show its own answer: replace whole-word occurrences with a blank (219 data clues contain it). */
+function clueText(p){const a=p.e[0].toLowerCase();return String(p.e[1]).split(/([^A-Za-z'’]+)/).map(w=>w.toLowerCase()===a?"＿＿＿":w).join("");}
 function wordKeys(p){const[dr,dc]=p.dir===AC?[0,1]:[1,0];return p.tok.map((_,i)=>CK(p.row+dr*i,p.col+dc*i));}
 function numMap(){const m=new Map();for(const p of puzzle.placements){const k=CK(p.row,p.col);if(!m.has(k))m.set(k,p.num);}return m;}
 function wordsAt(k){return puzzle.placements.filter(p=>wordKeys(p).includes(k));}
@@ -1074,7 +1076,7 @@ function updateClueBar(){
   const p=active.placement;
   document.getElementById("cbNum").textContent=p.num;
   document.getElementById("cbDir").textContent=p.dir.toUpperCase();
-  document.getElementById("cbText").textContent=p.e[1];
+  document.getElementById("cbText").textContent=clueText(p);
   document.getElementById("cbLen").textContent=`(${p.tok.length})`;
 }
 function renderClues(){
@@ -1082,7 +1084,7 @@ function renderClues(){
     const items=puzzle.placements.filter(p=>p.dir===dir).sort((a,b)=>a.num-b.num);
     document.getElementById(elId).innerHTML=items.map(p=>
       `<div class="ci${isSolved(p)?" done":""}" data-n="${p.num}" data-d="${p.dir}" role="listitem" tabindex="0">`+
-      `<span class="cn2">${p.num}</span><span>${p.e[1]}<div class="en-clue">${p.e[2]||""}</div><span class="cl"> (${p.tok.length})</span></span></div>`
+      `<span class="cn2">${p.num}</span><span>${clueText(p)}<div class="en-clue">${p.e[2]||""}</div><span class="cl"> (${p.tok.length})</span></span></div>`
     ).join("");
   };
   mk(AC,"acrossClues");mk(DN,"downClues");
@@ -1342,7 +1344,7 @@ function printPuzzle(){
   const across=puzzle.placements.filter(p=>p.dir===AC).sort((a,b)=>a.num-b.num);
   const down=puzzle.placements.filter(p=>p.dir===DN).sort((a,b)=>a.num-b.num);
   document.getElementById("printClues").innerHTML=
-    `<b>ACROSS</b><br>${across.map(p=>`${p.num}. ${p.e[1]} (${p.tok.length})`).join("<br>")}<br><br><b>DOWN</b><br>${down.map(p=>`${p.num}. ${p.e[1]} (${p.tok.length})`).join("<br>")}`;
+    `<b>ACROSS</b><br>${across.map(p=>`${p.num}. ${clueText(p)} (${p.tok.length})`).join("<br>")}<br><br><b>DOWN</b><br>${down.map(p=>`${p.num}. ${clueText(p)} (${p.tok.length})`).join("<br>")}`;
   window.print();
 }
 
